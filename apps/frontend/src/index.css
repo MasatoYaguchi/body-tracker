@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* カスタムCSS変数（必要に応じて） */
+:root {
+  --brand-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* カスタムコンポーネント（必要に応じて） */
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-primary-500 text-white rounded-lg font-medium 
+           hover:bg-primary-600 focus:outline-none focus:ring-2 
+           focus:ring-primary-500 focus:ring-offset-2 
+           transition-all duration-200 transform hover:-translate-y-0.5;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-card border border-gray-100 
+           hover:shadow-card-hover transition-shadow duration-300;
+  }
+  
+  .form-input {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-lg 
+           focus:border-primary-500 focus:ring-2 focus:ring-primary-100 
+           focus:outline-none transition-colors duration-200;
+  }
+}
