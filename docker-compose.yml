@@ -1,0 +1,67 @@
+services:
+  # PostgreSQLデータベース
+  postgres:
+    image: postgres:15
+    container_name: body-tracker-db
+    environment:
+      POSTGRES_DB: body_tracker
+      POSTGRES_USER: developer
+      POSTGRES_PASSWORD: password123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/backend/sql:/docker-entrypoint-initdb.d
+    networks:
+      - body-tracker-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U developer -d body_tracker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Adminer（データベース管理UI）
+  adminer:
+    image: adminer:latest
+    container_name: body-tracker-adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - body-tracker-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: "pepa-linha-dark"
+
+  # Redis（将来のセッション管理・キャッシュ用）
+  redis:
+    image: redis:7-alpine
+    container_name: body-tracker-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - body-tracker-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  body-tracker-network:
+    driver: bridge

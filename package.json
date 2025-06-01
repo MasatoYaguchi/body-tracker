@@ -11,10 +11,19 @@
     "build:frontend": "pnpm --filter frontend build",
     "build:backend": "pnpm --filter backend build",
     "clean": "pnpm --recursive run clean",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint . && eslint .",
+    "lint:fix": "biome lint --write . && eslint --fix .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
     "type-check": "pnpm --recursive run type-check"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
     "prettier": "^3.0.0",
     "typescript": "^5.0.0"
   }

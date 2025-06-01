@@ -1,9 +1,13 @@
 {
   "name": "Body Tracker App",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
     }
   },
   "customizations": {
@@ -23,7 +27,7 @@
   },
   "postCreateCommand": "npm install -g pnpm",
   "remoteUser": "node",
-  "forwardPorts": [3000, 8000, 5173],
+  "forwardPorts": [3000, 8000, 5173, 5432, 8080, 6379],
   "portsAttributes": {
     "3000": {
       "label": "Frontend",
@@ -35,6 +39,18 @@
     },
     "5173": {
       "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Adminer (DB UI)",
+      "onAutoForward": "notify"
+    },
+    "6379": {
+      "label": "Redis",
       "onAutoForward": "notify"
     }
   }
