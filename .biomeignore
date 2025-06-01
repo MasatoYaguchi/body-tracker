@@ -1,0 +1,8 @@
+node_modules
+.pnpm-store
+dist
+build
+coverage
+.git
+pnpm-lock.yaml
+**/*.d.ts
