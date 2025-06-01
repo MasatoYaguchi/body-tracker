@@ -7,7 +7,11 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:test": "tsx src/test-db.ts"
   },
   "dependencies": {
     "@body-tracker/shared": "workspace:*",
@@ -15,11 +19,10 @@
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
     "hono": "^4.7.10",
-    "pg": "^8.16.0"
+    "@neondatabase/serverless": "1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/pg": "^8.15.2",
     "drizzle-kit": "^0.31.1",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
