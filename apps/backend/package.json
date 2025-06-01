@@ -7,7 +7,11 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:test": "tsx src/test-db.ts"
   },
   "dependencies": {
     "@body-tracker/shared": "workspace:*",
