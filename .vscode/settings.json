@@ -1,0 +1,119 @@
+{
+  // TypeScript設定
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.suggest.includeCompletionsForModuleExports": true,
+
+  // フォーマッター設定（Biomeを優先）
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
+
+  // 保存時のアクション（より明示的に）
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit",
+    "quickfix.biome": "explicit"
+  },
+
+  // ファイルタイプ別フォーマッター設定（より詳細に）
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "quickfix.biome": "explicit"
+    }
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "quickfix.biome": "explicit"
+    }
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "quickfix.biome": "explicit"
+    }
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "quickfix.biome": "explicit"
+    }
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  },
+
+  // CSS関連（TailwindCSS用）
+  "[css]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  },
+
+  // TailwindCSS設定
+  "tailwindCSS.includeLanguages": {
+    "typescript": "typescript",
+    "typescriptreact": "typescriptreact"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["className\\s*=\\s*[\"'`]([^\"'`]*)[\"'`]", "([a-zA-Z0-9\\-:]+)"]
+  ],
+
+  // Emmet設定
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+  "emmet.triggerExpansionOnTab": true,
+
+  // ファイル監視除外設定（パフォーマンス向上）
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.pnpm-store/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.git/**": true,
+    "**/coverage/**": true,
+    "pnpm-lock.yaml": true
+  },
+
+  // 検索除外設定
+  "search.exclude": {
+    "**/node_modules/**": true,
+    "**/.pnpm-store/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.git/**": true,
+    "**/coverage/**": true,
+    "pnpm-lock.yaml": true
+  },
+
+  // Git設定
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+
+  // その他の便利設定
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "workbench.editor.enablePreview": false,
+  "breadcrumbs.enabled": true
+}

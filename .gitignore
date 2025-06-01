@@ -128,9 +128,7 @@ public
 .vscode-test
 
 # Editor directories and files
-.vscode/settings.json
 .vscode/launch.json
-.vscode/extensions.json
 .vscode/tasks.json
 .idea/
 *.swp

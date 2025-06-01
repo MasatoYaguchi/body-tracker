@@ -1,0 +1,25 @@
+{
+  "recommendations": [
+    // 必須ツール（BiomeのみでOK）
+    "biomejs.biome",
+
+    // React & TypeScript
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+
+    // 開発支援
+    "ms-vscode.vscode-json",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-eslint",
+
+    // Git
+    "eamodio.gitlens",
+
+    // その他便利ツール
+    "ms-vscode.vscode-thunder-client",
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens"
+  ],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript", "esbenp.prettier-vscode"]
+}

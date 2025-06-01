@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -18,7 +15,7 @@ export default {
         secondary: {
           500: '#764ba2',
           600: '#6b46c1',
-        }
+        },
       },
       fontFamily: {
         sans: [
@@ -29,11 +26,11 @@ export default {
           'Oxygen',
           'Ubuntu',
           'Cantarell',
-          'sans-serif'
+          'sans-serif',
         ],
       },
       boxShadow: {
-        'card': '0 4px 20px rgba(0, 0, 0, 0.1)',
+        card: '0 4px 20px rgba(0, 0, 0, 0.1)',
         'card-hover': '0 6px 25px rgba(0, 0, 0, 0.15)',
       },
       animation: {
@@ -48,9 +45,9 @@ export default {
         slideUp: {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
-        }
-      }
+        },
+      },
     },
   },
   plugins: [],
-}
+};
