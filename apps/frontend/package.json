@@ -11,18 +11,19 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@body-tracker/shared": "workspace:*",
+    "@react-oauth/google": "^0.12.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@body-tracker/shared": "workspace:*"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.0.0",
-    "typescript": "^5.0.0",
-    "vite": "^5.0.0",
-    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0"
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
   }
 }
