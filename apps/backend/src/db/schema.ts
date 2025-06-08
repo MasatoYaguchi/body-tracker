@@ -2,7 +2,7 @@ import { date, decimal, pgTable, text, timestamp, uuid, varchar } from 'drizzle-
 
 // usersテーブル定義（実際のDBに合わせて修正）
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(), 
   username: varchar('username', { length: 50 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   passwordHash: varchar('password_hash', { length: 255 }),
