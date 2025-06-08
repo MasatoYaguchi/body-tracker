@@ -1,496 +1,72 @@
-import type { BodyRecord, Stats } from '@body-tracker/shared';
-import type React from 'react';
-import { useCallback, useEffect, useId, useState } from 'react';
+// apps/frontend/src/App.tsx
+// 認証システム統合版メインアプリケーション（簡潔版）
 
-// API関数
-const API_BASE = 'http://localhost:8000/api';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Suspense } from 'react';
+import { AuthProvider, useAuthConditional } from './auth';
+import { Dashboard } from './dashboard/Dashboard';
+import { LoginScreen } from './layout/LoginScreen';
+import { UserHeader } from './layout/UserHeader';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
-const api = {
-  async getRecords(): Promise<BodyRecord[]> {
-    const res = await fetch(`${API_BASE}/records`);
-    if (!res.ok) throw new Error('記録の取得に失敗しました');
-    return res.json();
-  },
+// ===== 環境変数の取得 =====
 
-  async addRecord(record: Omit<BodyRecord, 'id' | 'createdAt'>): Promise<BodyRecord> {
-    const res = await fetch(`${API_BASE}/records`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record),
-    });
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || '記録の追加に失敗しました');
-    }
-    return res.json();
-  },
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  async updateRecord(
-    id: string,
-    record: Omit<BodyRecord, 'id' | 'createdAt'>,
-  ): Promise<BodyRecord> {
-    const res = await fetch(`${API_BASE}/records/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record),
-    });
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || '記録の更新に失敗しました');
-    }
-    return res.json();
-  },
+if (!GOOGLE_CLIENT_ID) {
+  throw new Error('VITE_GOOGLE_CLIENT_ID environment variable is required');
+}
 
-  async deleteRecord(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE}/records/${id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error('記録の削除に失敗しました');
-  },
-
-  async getStats(): Promise<Stats> {
-    const res = await fetch(`${API_BASE}/stats`);
-    if (!res.ok) throw new Error('統計情報の取得に失敗しました');
-    return res.json();
-  },
-};
-
-// コンポーネント
-const RecordForm: React.FC<{
-  onSubmit: (record: Omit<BodyRecord, 'id' | 'createdAt'>) => void;
-  editingRecord?: BodyRecord | null;
-  onCancel?: () => void;
-}> = ({ onSubmit, editingRecord, onCancel }) => {
-  // React 18新機能: useId で一意なIDを生成
-  const formId = useId();
-
-  const [weight, setWeight] = useState(editingRecord?.weight?.toString() || '');
-  const [bodyFat, setBodyFat] = useState(editingRecord?.bodyFatPercentage?.toString() || '');
-  const [date, setDate] = useState(editingRecord?.date || new Date().toISOString().split('T')[0]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const weightNum = Number.parseFloat(weight);
-    const bodyFatNum = Number.parseFloat(bodyFat);
-
-    if (Number.isNaN(weightNum) || Number.isNaN(bodyFatNum)) {
-      alert('有効な数値を入力してください');
-      return;
-    }
-
-    onSubmit({
-      weight: weightNum,
-      bodyFatPercentage: bodyFatNum,
-      date,
-    });
-
-    if (!editingRecord) {
-      setWeight('');
-      setBodyFat('');
-      setDate(new Date().toISOString().split('T')[0]);
-    }
-  };
-
-  return (
-    <div className="card p-6 animate-fade-in">
-      <h3 className="text-xl font-semibold text-gray-800 mb-6">
-        {editingRecord ? '記録を編集' : '新しい記録を追加'}
-      </h3>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label
-            htmlFor={`${formId}-date`}
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            日付
-          </label>
-          <input
-            type="date"
-            id={`${formId}-date`}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="form-input"
-            required
-          />
-        </div>
-        <div>
-          <label
-            htmlFor={`${formId}-weight`}
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            体重 (kg)
-          </label>
-          <input
-            type="number"
-            id={`${formId}-weight`}
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            step="0.1"
-            min="0"
-            max="1000"
-            className="form-input"
-            placeholder="例: 65.5"
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor={`${formId}-bodyFat`}
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            体脂肪率 (%)
-          </label>
-          <input
-            type="number"
-            id={`${formId}-bodyFat`}
-            value={bodyFat}
-            onChange={(e) => setBodyFat(e.target.value)}
-            step="0.1"
-            min="0"
-            max="100"
-            className="form-input"
-            placeholder="例: 15.5"
-            required
-          />
-        </div>
-
-        <div className="flex gap-3 pt-4">
-          <button type="submit" className="btn-primary flex-1">
-            {editingRecord ? '更新' : '追加'}
-          </button>
-          {editingRecord && onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium 
-                        hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 
-                        focus:ring-offset-2 transition-all duration-200"
-            >
-              キャンセル
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
-  );
-};
-
-const StatsDisplay: React.FC<{ stats: Stats }> = ({ stats }) => {
-  if (stats.count === 0) {
-    return (
-      <div className="card p-6 animate-fade-in">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">統計情報</h3>
-        <p className="text-gray-500 text-center py-8">まだ記録がありません</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card p-6 animate-fade-in">
-      <h3 className="text-xl font-semibold text-gray-800 mb-6">統計情報</h3>
-      <div className="grid gap-4">
-        <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-l-4 border-primary-500">
-          <span className="text-gray-700 font-medium">記録数</span>
-          <span className="text-lg font-bold text-gray-900">{stats.count}回</span>
-        </div>
-
-        <div className="flex justify-between items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-l-4 border-green-500">
-          <span className="text-gray-700 font-medium">最新体重</span>
-          <span className="text-lg font-bold text-gray-900">{stats.latestWeight}kg</span>
-        </div>
-
-        <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border-l-4 border-purple-500">
-          <span className="text-gray-700 font-medium">最新体脂肪率</span>
-          <span className="text-lg font-bold text-gray-900">{stats.latestBodyFat}%</span>
-        </div>
-
-        {stats.weightChange !== null && (
-          <div
-            className={`flex justify-between items-center p-4 rounded-lg border-l-4 ${
-              stats.weightChange > 0
-                ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-500'
-                : stats.weightChange < 0
-                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500'
-                  : 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-500'
-            }`}
-          >
-            <span className="text-gray-700 font-medium">体重変化</span>
-            <span
-              className={`text-lg font-bold ${
-                stats.weightChange > 0
-                  ? 'text-red-600'
-                  : stats.weightChange < 0
-                    ? 'text-green-600'
-                    : 'text-gray-900'
-              }`}
-            >
-              {stats.weightChange > 0 ? '+' : ''}
-              {stats.weightChange}kg
-            </span>
-          </div>
-        )}
-
-        {stats.bodyFatChange !== null && (
-          <div
-            className={`flex justify-between items-center p-4 rounded-lg border-l-4 ${
-              stats.bodyFatChange > 0
-                ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-500'
-                : stats.bodyFatChange < 0
-                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500'
-                  : 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-500'
-            }`}
-          >
-            <span className="text-gray-700 font-medium">体脂肪率変化</span>
-            <span
-              className={`text-lg font-bold ${
-                stats.bodyFatChange > 0
-                  ? 'text-red-600'
-                  : stats.bodyFatChange < 0
-                    ? 'text-green-600'
-                    : 'text-gray-900'
-              }`}
-            >
-              {stats.bodyFatChange > 0 ? '+' : ''}
-              {stats.bodyFatChange}%
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const RecordList: React.FC<{
-  records: BodyRecord[];
-  onEdit: (record: BodyRecord) => void;
-  onDelete: (id: string) => void;
-}> = ({ records, onEdit, onDelete }) => {
-  if (records.length === 0) {
-    return (
-      <div className="card p-6 animate-fade-in">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">記録一覧</h3>
-        <p className="text-gray-500 text-center py-8">まだ記録がありません</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card p-6 animate-fade-in">
-      <h3 className="text-xl font-semibold text-gray-800 mb-6">記録一覧</h3>
-      <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-        {records.map((record, index) => (
-          <div
-            key={record.id}
-            className="p-4 border-2 border-gray-100 rounded-lg hover:border-primary-200 
-                      hover:shadow-md transition-all duration-200 animate-slide-up group"
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="text-sm text-gray-500 mb-2">
-                  {new Date(record.date).toLocaleDateString('ja-JP', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'short',
-                  })}
-                </div>
-                <div className="flex gap-4 mb-3">
-                  <div className="bg-blue-50 px-3 py-1 rounded-full">
-                    <span className="text-sm font-medium text-blue-700">
-                      体重: {record.weight}kg
-                    </span>
-                  </div>
-                  <div className="bg-purple-50 px-3 py-1 rounded-full">
-                    <span className="text-sm font-medium text-purple-700">
-                      体脂肪率: {record.bodyFatPercentage}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <button
-                  type="button"
-                  onClick={() => onEdit(record)}
-                  className="px-3 py-1 text-sm bg-primary-100 text-primary-700 rounded-md 
-                            hover:bg-primary-200 focus:outline-none focus:ring-2 
-                            focus:ring-primary-300 transition-colors duration-200"
-                >
-                  編集
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm('この記録を削除しますか？')) {
-                      onDelete(record.id);
-                    }
-                  }}
-                  className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md 
-                            hover:bg-red-200 focus:outline-none focus:ring-2 
-                            focus:ring-red-300 transition-colors duration-200"
-                >
-                  削除
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// メインアプリコンポーネント
-const App: React.FC = () => {
-  const [records, setRecords] = useState<BodyRecord[]>([]);
-  const [stats, setStats] = useState<Stats>({
-    count: 0,
-    latestWeight: null,
-    latestBodyFat: null,
-    weightChange: null,
-    bodyFatChange: null,
-  });
-  const [editingRecord, setEditingRecord] = useState<BodyRecord | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // React 18新機能: useCallback でメモ化
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [recordsData, statsData] = await Promise.all([api.getRecords(), api.getStats()]);
-      setRecords(recordsData);
-      setStats(statsData);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
-    } finally {
-      setLoading(false);
-    }
-  }, []); // 依存配列を明示的に空にする
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]); // loadDataを依存配列に追加
-
-  // 記録追加
-  const handleAddRecord = useCallback(
-    async (recordData: Omit<BodyRecord, 'id' | 'createdAt'>) => {
-      try {
-        await api.addRecord(recordData);
-        await loadData();
-      } catch (err) {
-        alert(err instanceof Error ? err.message : '記録の追加に失敗しました');
-      }
-    },
-    [loadData],
-  );
-
-  // 記録更新
-  const handleUpdateRecord = useCallback(
-    async (recordData: Omit<BodyRecord, 'id' | 'createdAt'>) => {
-      if (!editingRecord) return;
-
-      try {
-        await api.updateRecord(editingRecord.id, recordData);
-        setEditingRecord(null);
-        await loadData();
-      } catch (err) {
-        alert(err instanceof Error ? err.message : '記録の更新に失敗しました');
-      }
-    },
-    [editingRecord, loadData],
-  );
-
-  // 記録削除
-  const handleDeleteRecord = useCallback(
-    async (id: string) => {
-      try {
-        await api.deleteRecord(id);
-        await loadData();
-      } catch (err) {
-        alert(err instanceof Error ? err.message : '記録の削除に失敗しました');
-      }
-    },
-    [loadData],
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="card p-8 max-w-md mx-4 text-center">
-          <div className="text-red-500 mb-4">
-            <svg
-              className="w-16 h-16 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              role="img"
-              aria-label="エラーアイコン"
-            >
-              <title>エラーが発生しました</title>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-          </div>
-          <p className="text-red-600 text-lg font-medium mb-4">エラーが発生しました</p>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button type="button" onClick={loadData} className="btn-primary">
-            再試行
-          </button>
-        </div>
-      </div>
-    );
-  }
+/**
+ * 🆕 React 19新機能を活用したメインアプリケーションコンテンツ
+ *
+ * - useAuthConditional: 認証状態による条件付きレンダリング
+ * - 分割されたコンポーネントによる保守性向上
+ */
+function AppContent(): React.ReactElement {
+  const { showForAuth, showForGuest, showWhileLoading } = useAuthConditional();
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-8 text-center">
-            <h1 className="text-4xl font-light tracking-wide">体重・体脂肪率管理</h1>
-            <p className="mt-2 text-primary-100 text-lg">健康な毎日をサポート</p>
-          </div>
-        </div>
-      </header>
+      {/* ローディング状態 */}
+      {showWhileLoading(<LoadingSpinner size="large" message="認証状態を確認中..." fullScreen />)}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <RecordForm
-              onSubmit={editingRecord ? handleUpdateRecord : handleAddRecord}
-              editingRecord={editingRecord}
-              onCancel={() => setEditingRecord(null)}
-            />
-            <StatsDisplay stats={stats} />
-          </div>
+      {/* 認証済みユーザー向け */}
+      {showForAuth(
+        <div>
+          <UserHeader />
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Dashboard />
+          </main>
+        </div>,
+      )}
 
-          <div>
-            <RecordList records={records} onEdit={setEditingRecord} onDelete={handleDeleteRecord} />
-          </div>
-        </div>
-      </main>
+      {/* 未認証ユーザー向け */}
+      {showForGuest(<LoginScreen />)}
     </div>
   );
-};
+}
 
-export default App;
+/**
+ * ルートアプリケーションコンポーネント
+ *
+ * 🆕 React 19新機能:
+ * - Suspenseによる段階的読み込み
+ * - プロバイダーの階層化
+ * - エラーバウンダリーとの統合
+ *
+ * @returns React.ReactElement
+ */
+export default function App(): React.ReactElement {
+  return (
+    <Suspense
+      fallback={<LoadingSpinner size="large" message="アプリケーション読み込み中..." fullScreen />}
+    >
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </GoogleOAuthProvider>
+    </Suspense>
+  );
+}
