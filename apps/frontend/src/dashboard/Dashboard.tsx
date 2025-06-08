@@ -13,7 +13,7 @@ import { StatsCard } from './StatsCard';
 
 // ===== API関数（認証対応版） =====
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 
 /**
  * 認証ヘッダー付きのfetch関数

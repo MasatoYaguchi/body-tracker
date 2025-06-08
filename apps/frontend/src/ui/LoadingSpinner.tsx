@@ -60,12 +60,14 @@ export function LoadingSpinner({
     <div className={`${containerClass} ${className}`}>
       <div className="text-center">
         {/* The elements with the following roles can be changed to the following elements:<output> */}
-        <output
+        <div
+          role="status"
+          aria-live="polite"
           className={`animate-spin rounded-full border-b-2 border-primary-500 mx-auto mb-4 ${sizeClasses[size]}`}
           aria-label="読み込み中"
         >
           <span className="sr-only">読み込み中...</span>
-        </output>
+        </div>
         {message && <p className={`text-gray-600 ${textSizeClasses[size]}`}>{message}</p>}
       </div>
     </div>

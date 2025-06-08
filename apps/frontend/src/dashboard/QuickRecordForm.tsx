@@ -149,9 +149,7 @@ export function QuickRecordForm({ onRecordAdded }: QuickRecordFormProps): React.
           className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {isSubmitting && (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2">
-              ♥️Submit
-            </div>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
           )}
           {isSubmitting ? '追加中...' : '記録を追加'}
         </button>

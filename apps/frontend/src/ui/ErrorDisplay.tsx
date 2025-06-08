@@ -89,7 +89,7 @@ export function ErrorDisplay({
       case 'warning':
         return (
           <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <title>体重・体脂肪率管理アプリアイコン</title>
+            <title>体重・体脂肪率管理アプリWarningアイコン</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
