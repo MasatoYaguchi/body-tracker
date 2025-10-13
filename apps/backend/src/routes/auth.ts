@@ -1,7 +1,12 @@
 // apps/backend/src/routes/auth.ts
 import { Hono } from 'hono';
 import { validator } from 'hono/validator';
-import { findOrCreateUser, generateJWT, verifyGoogleToken } from '../auth/google';
+import {
+  exchangeCodeForIdToken,
+  findOrCreateUser,
+  generateJWT,
+  verifyGoogleToken,
+} from '../auth/google';
 import { authMiddleware, getAuthenticatedUser } from '../middleware/auth';
 
 // 認証ルーター作成
@@ -89,6 +94,45 @@ auth.post('/google', googleAuthValidator, async (c) => {
     return c.json({ error: 'Authentication failed' }, 500);
   }
 });
+
+// Authorization Code + PKCE 交換エンドポイント
+auth.post(
+  '/google/code',
+  validator('json', (value, c) => {
+    if (typeof value.code !== 'string' || !value.code)
+      return c.json({ error: 'code required' }, 400);
+    if (typeof value.codeVerifier !== 'string' || !value.codeVerifier)
+      return c.json({ error: 'codeVerifier required' }, 400);
+    if (typeof value.redirectUri !== 'string' || !value.redirectUri)
+      return c.json({ error: 'redirectUri required' }, 400);
+    return value;
+  }),
+  async (c) => {
+    try {
+      const { code, codeVerifier, redirectUri } = c.req.valid('json');
+      const { idToken } = await exchangeCodeForIdToken({ code, codeVerifier, redirectUri });
+      const googlePayload = await verifyGoogleToken(idToken);
+      if (!googlePayload.email_verified) {
+        return c.json({ error: 'Email not verified by Google' }, 400);
+      }
+      const user = await findOrCreateUser(googlePayload);
+      const token = generateJWT(user);
+      return c.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.displayName,
+          picture: user.avatarUrl,
+        },
+        token,
+        flow: 'code',
+      });
+    } catch (e) {
+      console.error('❌ Code flow auth error:', e);
+      return c.json({ error: 'Code flow authentication failed' }, 500);
+    }
+  },
+);
 
 /**
  * ユーザー情報取得エンドポイント

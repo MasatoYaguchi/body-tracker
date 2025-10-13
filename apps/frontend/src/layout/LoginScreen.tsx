@@ -1,18 +1,13 @@
 // apps/frontend/src/components/layout/LoginScreen.tsx
 // 🆕 React 19新機能を活用したログイン画面コンポーネント
 
-import { Suspense, useCallback } from 'react';
-
-import { GoogleLoginButton } from '../auth/components/GoogleLoginButton';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { useState } from 'react';
+import { startPkceLogin } from '../auth/services/authCodeFlow';
 
 /**
  * LoginScreenコンポーネントのProps
  */
 export interface LoginScreenProps {
-  /** ログイン成功時のコールバック */
-  onLoginSuccess?: (user: { email: string; name?: string }) => void;
-  /** ログイン失敗時のコールバック */
   onLoginError?: (error: string) => void;
 }
 
@@ -34,31 +29,8 @@ export interface LoginScreenProps {
  * />
  * ```
  */
-export function LoginScreen({
-  onLoginSuccess,
-  onLoginError,
-}: LoginScreenProps): React.ReactElement {
-  /**
-   * ログイン成功ハンドラー
-   */
-  const handleLoginSuccess = useCallback(
-    (user: { email: string; name?: string }) => {
-      console.log('✅ ログイン成功:', user.email);
-      onLoginSuccess?.(user);
-    },
-    [onLoginSuccess],
-  );
-
-  /**
-   * ログイン失敗ハンドラー
-   */
-  const handleLoginError = useCallback(
-    (error: string) => {
-      console.error('❌ ログイン失敗:', error);
-      onLoginError?.(error);
-    },
-    [onLoginError],
-  );
+export function LoginScreen({ onLoginError }: LoginScreenProps) {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -90,21 +62,42 @@ export function LoginScreen({
               </p>
             </div>
 
-            {/* Google認証ボタン */}
-            <div className="flex justify-center">
-              <Suspense
-                fallback={<LoadingSpinner size="medium" message="認証システム読み込み中..." />}
+            {/* Google認証ボタン (PKCE Code Flow) */}
+            <div className="flex flex-col items-center">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    setErrorMessage(null);
+                    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+                    if (!clientId) throw new Error('CLIENT_ID 未設定');
+                    await startPkceLogin({
+                      clientId,
+                      redirectUri: `${window.location.origin}/auth/callback`,
+                    });
+                  } catch (e) {
+                    const msg = (e as Error).message || '認証開始失敗';
+                    setErrorMessage(msg);
+                    onLoginError?.(msg);
+                  }
+                }}
+                className="w-80 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition disabled:opacity-50"
               >
-                <GoogleLoginButton
-                  onSuccess={handleLoginSuccess}
-                  onError={handleLoginError}
-                  text="Googleでログイン"
-                  theme="filled_blue"
-                  size="large"
-                  shape="rectangular"
-                  width={320}
-                />
-              </Suspense>
+                {/* Simple G icon placeholder */}
+                <span className="bg-white text-blue-600 rounded-sm w-5 h-5 flex items-center justify-center font-bold text-xs">
+                  G
+                </span>
+                Googleでログイン
+              </button>
+              {errorMessage && (
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="mt-4 w-full max-w-xs rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 shadow-sm"
+                >
+                  {errorMessage}
+                </div>
+              )}
             </div>
 
             {/* 利用規約 */}

@@ -1,22 +1,10 @@
-// apps/frontend/src/App.tsx
-// 認証システム統合版メインアプリケーション（簡潔版）
-
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Suspense } from 'react';
 import { AuthProvider, useAuthConditional } from './auth';
+import { AuthCallback } from './auth/components/AuthCallback';
 import { Dashboard } from './dashboard/Dashboard';
 import { LoginScreen } from './layout/LoginScreen';
 import { UserHeader } from './layout/UserHeader';
 import { LoadingSpinner } from './ui/LoadingSpinner';
-
-// ===== 環境変数の取得 =====
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-if (!GOOGLE_CLIENT_ID) {
-  throw new Error('VITE_GOOGLE_CLIENT_ID environment variable is required');
-}
-
 /**
  * 🆕 React 19新機能を活用したメインアプリケーションコンテンツ
  *
@@ -58,15 +46,12 @@ function AppContent(): React.ReactElement {
  * @returns React.ReactElement
  */
 export default function App(): React.ReactElement {
+  if (window.location.pathname === '/auth/callback') return <AuthCallback />;
   return (
-    <Suspense
-      fallback={<LoadingSpinner size="large" message="アプリケーション読み込み中..." fullScreen />}
-    >
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </GoogleOAuthProvider>
+    <Suspense fallback={<LoadingSpinner size="large" message="読み込み中..." fullScreen />}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </Suspense>
   );
 }

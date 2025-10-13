@@ -2,7 +2,7 @@
 import { OAuth2Client } from 'google-auth-library';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 
-// Google OAuth2クライアントの初期化
+// Google OAuth2クライアントの初期化 (IDトークン検証用: client secret 不要)
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Google認証から取得される情報の型定義
@@ -63,6 +63,52 @@ export async function verifyGoogleToken(credential: string): Promise<GoogleToken
   } catch (error) {
     console.error('❌ Google token verification failed:', error);
     throw new Error('Invalid Google token');
+  }
+}
+
+/**
+ * Authorization Code + PKCE で受け取った code を Google Token Endpoint で交換し id_token を取得する
+ *  - フロントエンドから code, codeVerifier, redirectUri を受け取り使用
+ *  - ここでは refresh_token も返却され得るが現状は使用しない（将来のリフレッシュ拡張用）
+ */
+export async function exchangeCodeForIdToken(params: {
+  code: string;
+  codeVerifier: string;
+  redirectUri: string;
+}): Promise<{ idToken: string; refreshToken?: string }> {
+  const { code, codeVerifier, redirectUri } = params;
+
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    throw new Error('Google OAuth client credentials not set');
+  }
+
+  // redirectUri の簡易バリデーション（本番導入時は許可リスト化）
+  if (!/^http:\/\/localhost:3000\/(gsi-test\.html|auth\/callback)$/.test(redirectUri)) {
+    throw new Error('Invalid redirectUri');
+  }
+
+  try {
+    const oauthClient = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri,
+    );
+
+    const { tokens } = await oauthClient.getToken({
+      code,
+      codeVerifier,
+      redirect_uri: redirectUri,
+    });
+
+    const idToken = tokens.id_token ?? undefined;
+    if (!idToken) {
+      throw new Error('No id_token returned from Google');
+    }
+
+    return { idToken, refreshToken: tokens.refresh_token ?? undefined };
+  } catch (e) {
+    console.error('❌ Code exchange failed', e);
+    throw new Error('Code exchange failed');
   }
 }
 

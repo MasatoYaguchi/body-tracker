@@ -1,7 +1,7 @@
 // apps/frontend/src/auth/index.ts
-// 認証モジュールのエントリーポイント（分割版）
+// 認証モジュールのエントリーポイント（修正版）
 
-// ===== Core Provider =====
+// ===== Core Provider（修正: AuthProviderを追加） =====
 export { AuthContext } from './providers/AuthContext';
 export { AuthProvider } from './providers/AuthProvider';
 
@@ -46,9 +46,8 @@ export {
   validateAuthContext,
 } from './providers/AuthContext';
 
-// ===== Components (今後追加予定) =====
-// export { GoogleLoginButton } from './components/GoogleLoginButton';
-// export { ProtectedRoute } from './components/ProtectedRoute';
+// ===== Components (future) =====
+// Placeholder for future auth-related UI exports
 
 // ===== 使用例コメント =====
 
@@ -130,9 +129,7 @@ function LoginButton() {
     <button onClick={logout} disabled={isTransitioning}>
       {isTransitioning ? 'Logging out...' : 'Logout'}
     </button>
-  ) : (
-    <GoogleLoginButton onLogin={handleGoogleLogin} />
-  );
+  ) : null;
 }
 ```
 */

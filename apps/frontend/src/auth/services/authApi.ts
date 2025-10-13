@@ -77,6 +77,31 @@ class authApiClient {
   }
 
   /**
+   * Authorization Code (PKCE) をサーバに送り JWT を取得
+   */
+  async exchangeAuthorizationCode(params: {
+    code: string;
+    codeVerifier: string;
+    redirectUri: string;
+  }): Promise<GoogleAuthResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/auth/google/code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      if (!response.ok) {
+        const err: AuthError = await response.json();
+        throw new AuthenticationError(err.error || 'Code exchange failed', 'GOOGLE_AUTH_FAILED');
+      }
+      return (await response.json()) as GoogleAuthResponse;
+    } catch (error) {
+      if (error instanceof AuthenticationError) throw error;
+      throw new AuthenticationError('Network error during code exchange', 'NETWORK_ERROR');
+    }
+  }
+
+  /**
    * JWTトークンを使用して現在のユーザー情報を取得
    *
    * @param token - JWTトークン
@@ -210,7 +235,13 @@ export const authApi = new authApiClient();
  * Google認証関数（個別エクスポート）
  * @see authApiClient.authenticateWithGoogle
  */
-export const { authenticateWithGoogle, getCurrentUser, logout, healthCheck } = authApi;
+export const {
+  authenticateWithGoogle,
+  getCurrentUser,
+  logout,
+  healthCheck,
+  exchangeAuthorizationCode,
+} = authApi;
 
 /**
  * AuthenticationErrorかどうかを判定する型ガード

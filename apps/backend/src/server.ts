@@ -17,7 +17,7 @@ const app = new Hono();
 app.use(
   '/*',
   cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -257,6 +257,7 @@ const port = 8000;
 console.log(`🚀 Server running at http://localhost:${port}`);
 console.log('🔐 Authentication endpoints:');
 console.log('  POST   /api/auth/google - Google OAuth認証');
+console.log('  POST   /api/auth/google/code - Google OAuth Code+PKCE 交換');
 console.log('  GET    /api/auth/me - ユーザー情報取得');
 console.log('  POST   /api/auth/logout - ログアウト');
 console.log('  GET    /api/auth/status - 認証ステータス確認');

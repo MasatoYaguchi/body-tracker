@@ -1,9 +1,9 @@
 // apps/frontend/src/auth/useAuth.ts
-// React 19新機能を活用したカスタムフック集
+// React 19新機能を活用したカスタムフック集（修正版）
 
 import { useContext } from 'react';
-import type { AuthContextType } from './AuthProvider';
-import { AuthContext } from './AuthProvider';
+import { AuthContext } from './providers/AuthContext';
+import type { AuthContextType } from './types/auth.types';
 
 // ===== 基本認証フック =====
 
@@ -74,7 +74,3 @@ export function useAuthConditional() {
     showWhileLoading: (component: React.ReactNode) => (isLoading ? component : null),
   };
 }
-
-// ===== 型エクスポート =====
-
-export type { AuthContextType } from './AuthProvider';
