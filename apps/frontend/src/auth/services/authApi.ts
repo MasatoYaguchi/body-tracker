@@ -1,247 +1,300 @@
 // apps/frontend/src/auth/services/authApi.ts
 // 認証関連API通信サービス
 
-import type { AuthError, GoogleAuthResponse, User } from '../types/auth.types';
-import { AuthenticationError } from '../types/auth.types';
+import type { AuthError, GoogleAuthResponse, User } from "../types/auth.types";
+import { AuthenticationError } from "../types/auth.types";
 
 // ===== 設定 =====
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000/api";
 
 /**
  * 認証API通信クライアント
  * バックエンドの認証エンドポイントとの通信を管理
  */
 class authApiClient {
-  private baseURL: string;
+	private baseURL: string;
 
-  /**
-   * APIクライアントを初期化
-   * @param baseURL - APIのベースURL（デフォルト: http://localhost:8000/api）
-   */
-  constructor(baseURL: string = API_BASE) {
-    this.baseURL = baseURL;
-  }
+	/**
+	 * APIクライアントを初期化
+	 * @param baseURL - APIのベースURL（デフォルト: http://localhost:8000/api）
+	 */
+	constructor(baseURL: string = API_BASE) {
+		this.baseURL = baseURL;
+	}
 
-  /**
-   * Google認証トークンを送信してJWTを取得
-   *
-   * @param credential - Google IDトークン
-   * @returns Promise<GoogleAuthResponse> ユーザー情報とJWTトークン
-   * @throws {AuthenticationError} 認証失敗時
-   *
-   * @example
-   * ```typescript
-   * try {
-   *   const { user, token } = await authApi.authenticateWithGoogle(googleToken);
-   *   console.log('Logged in as:', user.email);
-   * } catch (error) {
-   *   console.error('Login failed:', error.message);
-   * }
-   * ```
-   */
-  async authenticateWithGoogle(credential: string): Promise<GoogleAuthResponse> {
-    console.log('🚀 Google認証API呼び出し開始');
+	/**
+	 * Google認証トークンを送信してJWTを取得
+	 *
+	 * @param credential - Google IDトークン
+	 * @returns Promise<GoogleAuthResponse> ユーザー情報とJWTトークン
+	 * @throws {AuthenticationError} 認証失敗時
+	 *
+	 * @example
+	 * ```typescript
+	 * try {
+	 *   const { user, token } = await authApi.authenticateWithGoogle(googleToken);
+	 *   console.log('Logged in as:', user.email);
+	 * } catch (error) {
+	 *   console.error('Login failed:', error.message);
+	 * }
+	 * ```
+	 */
+	async authenticateWithGoogle(
+		credential: string,
+	): Promise<GoogleAuthResponse> {
+		console.log("🚀 Google認証API呼び出し開始");
 
-    try {
-      const response = await fetch(`${this.baseURL}/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ credential }),
-      });
+		try {
+			const response = await fetch(`${this.baseURL}/auth/google`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ credential }),
+			});
 
-      if (!response.ok) {
-        const errorData: AuthError = await response.json();
-        throw new AuthenticationError(
-          errorData.error || 'Authentication failed',
-          'GOOGLE_AUTH_FAILED',
-        );
-      }
+			if (!response.ok) {
+				const errorData: AuthError = await response.json();
+				throw new AuthenticationError(
+					errorData.error || "Authentication failed",
+					"GOOGLE_AUTH_FAILED",
+				);
+			}
 
-      const data: GoogleAuthResponse = await response.json();
-      console.log('✅ Google認証API成功:', data.user.email);
+			const data: GoogleAuthResponse = await response.json();
+			console.log("✅ Google認証API成功:", data.user.email);
 
-      return data;
-    } catch (error) {
-      console.error('❌ Google認証API失敗:', error);
+			return data;
+		} catch (error) {
+			console.error("❌ Google認証API失敗:", error);
 
-      if (error instanceof AuthenticationError) {
-        throw error;
-      }
+			if (error instanceof AuthenticationError) {
+				throw error;
+			}
 
-      // ネットワークエラーなど
-      throw new AuthenticationError('Network error during authentication', 'NETWORK_ERROR');
-    }
-  }
+			// ネットワークエラーなど
+			throw new AuthenticationError(
+				"Network error during authentication",
+				"NETWORK_ERROR",
+			);
+		}
+	}
 
-  /**
-   * Authorization Code (PKCE) をサーバに送り JWT を取得
-   */
-  async exchangeAuthorizationCode(params: {
-    code: string;
-    codeVerifier: string;
-    redirectUri: string;
-  }): Promise<GoogleAuthResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/auth/google/code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      });
-      if (!response.ok) {
-        const err: AuthError = await response.json();
-        throw new AuthenticationError(err.error || 'Code exchange failed', 'GOOGLE_AUTH_FAILED');
-      }
-      return (await response.json()) as GoogleAuthResponse;
-    } catch (error) {
-      if (error instanceof AuthenticationError) throw error;
-      throw new AuthenticationError('Network error during code exchange', 'NETWORK_ERROR');
-    }
-  }
+	/**
+	 * Authorization Code (PKCE) をサーバに送り JWT を取得
+	 */
+	async exchangeAuthorizationCode(params: {
+		code: string;
+		codeVerifier: string;
+		redirectUri: string;
+	}): Promise<GoogleAuthResponse> {
+		try {
+			console.log(
+				"authApi.exchangeAuthorizationCode: POST",
+				`${this.baseURL}/auth/google/code`,
+				{
+					code: `${params.code?.slice(0, 10)}...`,
+					redirectUri: params.redirectUri,
+				},
+			);
+			const response = await fetch(`${this.baseURL}/auth/google/code`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(params),
+			});
+			if (!response.ok) {
+				let errBody: unknown = null;
+				try {
+					errBody = await response.json();
+				} catch (_e) {
+					errBody = await response.text();
+				}
+				console.error(
+					"authApi.exchangeAuthorizationCode: non-OK response",
+					response.status,
+					errBody,
+				);
+				const err: AuthError =
+					typeof errBody === "object" && errBody !== null
+						? (errBody as AuthError)
+						: { error: String(errBody) };
+				throw new AuthenticationError(
+					err.error || "Code exchange failed",
+					"GOOGLE_AUTH_FAILED",
+				);
+			}
+			const data = await response.json();
+			console.log("authApi.exchangeAuthorizationCode: success", data);
+			return data as GoogleAuthResponse;
+		} catch (error) {
+			console.error("authApi.exchangeAuthorizationCode: caught error", error);
+			if (error instanceof AuthenticationError) throw error;
+			throw new AuthenticationError(
+				"Network error during code exchange",
+				"NETWORK_ERROR",
+			);
+		}
+	}
 
-  /**
-   * JWTトークンを使用して現在のユーザー情報を取得
-   *
-   * @param token - JWTトークン
-   * @returns Promise<User> ユーザー情報
-   * @throws {AuthenticationError} トークンが無効または期限切れの場合
-   *
-   * @example
-   * ```typescript
-   * try {
-   *   const user = await authApi.getCurrentUser(jwtToken);
-   *   console.log('Current user:', user.email);
-   * } catch (error) {
-   *   if (error.code === 'TOKEN_EXPIRED') {
-   *     // ログイン画面にリダイレクト
-   *   }
-   * }
-   * ```
-   */
-  async getCurrentUser(token: string): Promise<User> {
-    console.log('🔍 ユーザー情報取得API開始');
+	/**
+	 * JWTトークンを使用して現在のユーザー情報を取得
+	 *
+	 * @param token - JWTトークン
+	 * @returns Promise<User> ユーザー情報
+	 * @throws {AuthenticationError} トークンが無効または期限切れの場合
+	 *
+	 * @example
+	 * ```typescript
+	 * try {
+	 *   const user = await authApi.getCurrentUser(jwtToken);
+	 *   console.log('Current user:', user.email);
+	 * } catch (error) {
+	 *   if (error.code === 'TOKEN_EXPIRED') {
+	 *     // ログイン画面にリダイレクト
+	 *   }
+	 * }
+	 * ```
+	 */
+	async getCurrentUser(token: string): Promise<User> {
+		console.log("🔍 ユーザー情報取得API開始");
 
-    try {
-      const response = await fetch(`${this.baseURL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+		try {
+			const response = await fetch(`${this.baseURL}/auth/me`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new AuthenticationError('Token expired or invalid', 'TOKEN_EXPIRED');
-        }
+			if (!response.ok) {
+				if (response.status === 401) {
+					throw new AuthenticationError(
+						"Token expired or invalid",
+						"TOKEN_EXPIRED",
+					);
+				}
 
-        const errorData: AuthError = await response.json();
-        throw new AuthenticationError(
-          errorData.error || 'Failed to get user info',
-          'USER_INFO_FAILED',
-        );
-      }
+				const errorData: AuthError = await response.json();
+				throw new AuthenticationError(
+					errorData.error || "Failed to get user info",
+					"USER_INFO_FAILED",
+				);
+			}
 
-      const user: User = await response.json();
-      console.log('✅ ユーザー情報取得成功:', user.email);
+			const user: User = await response.json();
+			console.log("✅ ユーザー情報取得成功:", user.email);
 
-      return user;
-    } catch (error) {
-      console.error('❌ ユーザー情報取得失敗:', error);
+			return user;
+		} catch (error) {
+			console.error("❌ ユーザー情報取得失敗:", error);
 
-      if (error instanceof AuthenticationError) {
-        throw error;
-      }
+			if (error instanceof AuthenticationError) {
+				throw error;
+			}
 
-      throw new AuthenticationError('Failed to validate user token', 'VALIDATION_ERROR');
-    }
-  }
+			throw new AuthenticationError(
+				"Failed to validate user token",
+				"VALIDATION_ERROR",
+			);
+		}
+	}
 
-  /**
-   * サーバー側でログアウト処理を実行
-   *
-   * @param token - JWTトークン
-   * @returns Promise<void>
-   *
-   * @note APIエラーが発生してもログアウト処理は続行されます
-   *
-   * @example
-   * ```typescript
-   * await authApi.logout(currentToken);
-   * // ローカルストレージからトークンを削除
-   * localStorage.removeItem('authToken');
-   * ```
-   */
-  async logout(token: string): Promise<void> {
-    console.log('🚪 ログアウトAPI開始');
+	/**
+	 * サーバー側でログアウト処理を実行
+	 *
+	 * @param token - JWTトークン
+	 * @returns Promise<void>
+	 *
+	 * @note APIエラーが発生してもログアウト処理は続行されます
+	 *
+	 * @example
+	 * ```typescript
+	 * await authApi.logout(currentToken);
+	 * // ローカルストレージからトークンを削除
+	 * localStorage.removeItem('authToken');
+	 * ```
+	 */
+	async logout(token: string): Promise<void> {
+		console.log("🚪 ログアウトAPI開始");
 
-    try {
-      const response = await fetch(`${this.baseURL}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+		try {
+			const response = await fetch(`${this.baseURL}/auth/logout`, {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
 
-      if (!response.ok) {
-        console.warn('⚠️ ログアウトAPI失敗（続行）:', response.status);
-        // ログアウトAPIの失敗は致命的ではない
-        return;
-      }
+			if (!response.ok) {
+				console.warn("⚠️ ログアウトAPI失敗（続行）:", response.status);
+				// ログアウトAPIの失敗は致命的ではない
+				return;
+			}
 
-      console.log('✅ ログアウトAPI成功');
-    } catch (error) {
-      console.warn('⚠️ ログアウトAPIエラー（続行）:', error);
-      // ネットワークエラーでもログアウト処理は続行
-    }
-  }
+			console.log("✅ ログアウトAPI成功");
+		} catch (error) {
+			console.warn("⚠️ ログアウトAPIエラー（続行）:", error);
+			// ネットワークエラーでもログアウト処理は続行
+		}
+	}
 
-  /**
-   * APIサーバーの稼働状況を確認
-   *
-   * @returns Promise<{status: string, version?: string}> サーバー情報
-   * @throws {AuthenticationError} サーバーが利用できない場合
-   *
-   * @example
-   * ```typescript
-   * try {
-   *   const health = await authApi.healthCheck();
-   *   console.log('Server status:', health.status);
-   * } catch (error) {
-   *   console.error('Server is down:', error.message);
-   * }
-   * ```
-   */
-  async healthCheck(): Promise<{ status: string; version?: string }> {
-    try {
-      const response = await fetch(`${this.baseURL.replace('/api', '')}/`);
+	/**
+	 * APIサーバーの稼働状況を確認
+	 *
+	 * @returns Promise<{status: string, version?: string}> サーバー情報
+	 * @throws {AuthenticationError} サーバーが利用できない場合
+	 *
+	 * @example
+	 * ```typescript
+	 * try {
+	 *   const health = await authApi.healthCheck();
+	 *   console.log('Server status:', health.status);
+	 * } catch (error) {
+	 *   console.error('Server is down:', error.message);
+	 * }
+	 * ```
+	 */
+	async healthCheck(): Promise<{ status: string; version?: string }> {
+		try {
+			const response = await fetch(`${this.baseURL.replace("/api", "")}/`);
 
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
-      }
+			if (!response.ok) {
+				throw new Error(`Server returned ${response.status}`);
+			}
 
-      return await response.json();
-    } catch (error) {
-      console.error('❌ ヘルスチェック失敗:', error);
-      throw new AuthenticationError('Authentication server is not available', 'SERVER_UNAVAILABLE');
-    }
-  }
+			return await response.json();
+		} catch (error) {
+			console.error("❌ ヘルスチェック失敗:", error);
+			throw new AuthenticationError(
+				"Authentication server is not available",
+				"SERVER_UNAVAILABLE",
+			);
+		}
+	}
 }
 
 /** 認証APIクライアントのシングルトンインスタンス */
 export const authApi = new authApiClient();
 
 /**
- * Google認証関数（個別エクスポート）
- * @see authApiClient.authenticateWithGoogle
+ * Wrap instance methods so callers using the named exports don't lose `this`.
+ * Destructuring methods from the instance (e.g. `const { exchangeAuthorizationCode } = authApi`) would
+ * otherwise call the method with undefined `this` and break access to instance fields.
  */
-export const {
-  authenticateWithGoogle,
-  getCurrentUser,
-  logout,
-  healthCheck,
-  exchangeAuthorizationCode,
-} = authApi;
+export const authenticateWithGoogle = (...args: any[]) =>
+	authApi.authenticateWithGoogle.apply(authApi, args as any);
+
+export const getCurrentUser = (...args: any[]) =>
+	authApi.getCurrentUser.apply(authApi, args as any);
+
+export const logout = (...args: any[]) =>
+	authApi.logout.apply(authApi, args as any);
+
+export const healthCheck = (...args: any[]) =>
+	authApi.healthCheck.apply(authApi, args as any);
+
+export const exchangeAuthorizationCode = (...args: any[]) =>
+	authApi.exchangeAuthorizationCode.apply(authApi, args as any);
 
 /**
  * AuthenticationErrorかどうかを判定する型ガード
@@ -260,8 +313,10 @@ export const {
  * }
  * ```
  */
-export function isAuthenticationError(error: unknown): error is AuthenticationError {
-  return error instanceof AuthenticationError;
+export function isAuthenticationError(
+	error: unknown,
+): error is AuthenticationError {
+	return error instanceof AuthenticationError;
 }
 
 /**
@@ -281,20 +336,20 @@ export function isAuthenticationError(error: unknown): error is AuthenticationEr
  * ```
  */
 export function getAuthErrorMessage(error: unknown): string {
-  if (isAuthenticationError(error)) {
-    switch (error.code) {
-      case 'GOOGLE_AUTH_FAILED':
-        return 'Google認証に失敗しました。もう一度お試しください。';
-      case 'TOKEN_EXPIRED':
-        return 'ログインセッションが期限切れです。再度ログインしてください。';
-      case 'NETWORK_ERROR':
-        return 'ネットワークエラーが発生しました。接続を確認してください。';
-      case 'SERVER_UNAVAILABLE':
-        return 'サーバーに接続できません。しばらく待ってからお試しください。';
-      default:
-        return error.message;
-    }
-  }
+	if (isAuthenticationError(error)) {
+		switch (error.code) {
+			case "GOOGLE_AUTH_FAILED":
+				return "Google認証に失敗しました。もう一度お試しください。";
+			case "TOKEN_EXPIRED":
+				return "ログインセッションが期限切れです。再度ログインしてください。";
+			case "NETWORK_ERROR":
+				return "ネットワークエラーが発生しました。接続を確認してください。";
+			case "SERVER_UNAVAILABLE":
+				return "サーバーに接続できません。しばらく待ってからお試しください。";
+			default:
+				return error.message;
+		}
+	}
 
-  return '不明なエラーが発生しました。';
+	return "不明なエラーが発生しました。";
 }
