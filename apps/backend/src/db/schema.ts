@@ -1,4 +1,4 @@
-import { date, decimal, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { decimal, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 // usersテーブル定義（実際のDBに合わせて修正）
 export const users = pgTable('users', {
@@ -22,7 +22,7 @@ export const bodyRecords = pgTable('body_records', {
     precision: 4,
     scale: 2,
   }).notNull(),
-  recordedDate: date('recorded_date').notNull(),
+  recordedDate: timestamp('recorded_date', { withTimezone: true }).notNull(),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }),
   updatedAt: timestamp('updated_at', { withTimezone: true }),
