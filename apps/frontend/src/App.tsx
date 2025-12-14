@@ -1,10 +1,12 @@
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { AuthProvider, useAuthConditional } from './auth';
 import { AuthCallback } from './auth/components/AuthCallback';
 import { Dashboard } from './dashboard/Dashboard';
 import { LoginScreen } from './layout/LoginScreen';
 import { UserHeader } from './layout/UserHeader';
+import { RankingPage } from './ranking/RankingPage';
 import { LoadingSpinner } from './ui/LoadingSpinner';
+
 /**
  * 🆕 React 19新機能を活用したメインアプリケーションコンテンツ
  *
@@ -13,6 +15,7 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
  */
 function AppContent(): React.ReactElement {
   const { showForAuth, showForGuest, showWhileLoading } = useAuthConditional();
+  const [currentView, setCurrentView] = useState<'dashboard' | 'ranking'>('dashboard');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -22,9 +25,9 @@ function AppContent(): React.ReactElement {
       {/* 認証済みユーザー向け */}
       {showForAuth(
         <div>
-          <UserHeader />
+          <UserHeader currentView={currentView} onNavigate={(view) => setCurrentView(view)} />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <Dashboard />
+            {currentView === 'dashboard' ? <Dashboard /> : <RankingPage />}
           </main>
         </div>,
       )}

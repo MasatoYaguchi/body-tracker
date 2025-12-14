@@ -9,6 +9,13 @@ export async function generatePkcePair(): Promise<PkcePair> {
   const random = crypto.getRandomValues(new Uint8Array(32));
   // Base64URL of random bytes (as verifier)
   const verifier = base64Url(random);
+
+  if (!crypto.subtle) {
+    throw new Error(
+      'Secure context required: crypto.subtle is undefined. Please access via localhost or HTTPS.',
+    );
+  }
+
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
   const challenge = base64Url(new Uint8Array(digest));
   return { verifier, challenge };

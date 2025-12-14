@@ -2,6 +2,7 @@
 // 統計情報表示カードコンポーネント
 
 import type { Stats } from '@body-tracker/shared';
+import { BigNumber } from 'bignumber.js';
 
 /**
  * StatsCardコンポーネントのProps
@@ -159,8 +160,12 @@ function ChangeStatItem({
   unit: string;
   type: 'weight' | 'bodyFat';
 }): React.ReactElement {
-  const isIncrease = value > 0;
-  const isDecrease = value < 0;
+  const bnValue = new BigNumber(value);
+  const isIncrease = bnValue.isGreaterThan(0);
+  const isDecrease = bnValue.isLessThan(0);
+
+  // 小数点第1位までフォーマット（丸めモードはデフォルトのHALF_UP）
+  const formattedValue = bnValue.abs().toFormat(1);
 
   const colorClass = isIncrease
     ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-500 text-red-600'
@@ -195,8 +200,8 @@ function ChangeStatItem({
       <span className="text-gray-700 font-medium">{label}</span>
       <span className={`text-xl font-bold flex items-center ${colorClass.split(' ').slice(-1)[0]}`}>
         {icon}
-        {isIncrease ? '+' : ''}
-        {value}
+        {isIncrease ? '+' : isDecrease ? '-' : ''}
+        {formattedValue}
         {unit}
       </span>
     </div>

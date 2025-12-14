@@ -97,7 +97,7 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
   const [_editingRecord, setEditingRecord] = useState<BodyRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const latestRecord = records[0] ?? null;
   // ===== データ取得処理 =====
 
   /**
@@ -127,7 +127,6 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
   }, [loadData]);
 
   // ===== レンダリング制御 =====
-
   if (loading) {
     return <LoadingSpinner size="large" message="データ読み込み中..." fullScreen />;
   }
@@ -155,12 +154,21 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
         {/* 統計情報カード */}
         <StatsCard stats={stats} />
 
-        {/* クイック記録フォーム */}
-        <QuickRecordForm onRecordAdded={loadData} />
+        {/* 記録フォーム */}
+        <QuickRecordForm
+          key={latestRecord?.id ?? 'empty'}
+          onRecordAdded={loadData}
+          latestRecord={latestRecord}
+        />
       </div>
 
       {/* 最近の記録一覧 */}
-      <RecentRecords records={records} onEdit={setEditingRecord} onRefresh={loadData} />
+      <RecentRecords
+        key={latestRecord?.id ?? 'empty'}
+        records={records}
+        onEdit={setEditingRecord}
+        onRefresh={loadData}
+      />
     </div>
   );
 }

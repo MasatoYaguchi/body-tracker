@@ -9,8 +9,8 @@ export const validateBodyRecord = (
 ): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
-  if (typeof data.weight !== 'number' || data.weight <= 0 || data.weight > 1000) {
-    errors.push('体重は0から1000の間で入力してください');
+  if (typeof data.weight !== 'number' || data.weight <= 0 || data.weight > 200) {
+    errors.push('体重は0から200の間で入力してください');
   }
 
   if (

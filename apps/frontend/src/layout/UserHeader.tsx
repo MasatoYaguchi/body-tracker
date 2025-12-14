@@ -15,6 +15,10 @@ export interface UserHeaderProps {
   onLogoutError?: (error: string) => void;
   /** ヘッダーの背景色を変更 */
   variant?: 'default' | 'transparent';
+  /** 現在のビュー */
+  currentView?: 'dashboard' | 'ranking';
+  /** ナビゲーションハンドラ */
+  onNavigate?: (view: 'dashboard' | 'ranking') => void;
 }
 
 /**
@@ -35,6 +39,8 @@ export function UserHeader({
   onLogoutSuccess,
   onLogoutError,
   variant = 'default',
+  currentView = 'dashboard',
+  onNavigate,
 }: UserHeaderProps): React.ReactElement {
   const { user, logout, isTransitioning } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -68,7 +74,7 @@ export function UserHeader({
     <header className={`${headerBgClass} border-b border-gray-200 shadow-sm`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* アプリロゴ・タイトル */}
+          {/* アプリロゴ・タイトル・ナビゲーション */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 text-primary-600">
@@ -83,9 +89,37 @@ export function UserHeader({
                 </svg>
               </div>
             </div>
-            <div className="ml-3">
+            <div className="ml-3 hidden sm:block">
               <h1 className="text-lg font-semibold text-gray-900">体重・体脂肪率管理</h1>
             </div>
+
+            {/* ナビゲーション (デスクトップ) */}
+            {onNavigate && (
+              <nav className="hidden md:ml-8 md:flex md:space-x-4">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('dashboard')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    currentView === 'dashboard'
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  ダッシュボード
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('ranking')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    currentView === 'ranking'
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  ランキング 🏆
+                </button>
+              </nav>
+            )}
           </div>
 
           {/* ユーザー情報・ログアウト */}
@@ -145,6 +179,30 @@ export function UserHeader({
             </button>
           </div>
         </div>
+
+        {/* モバイル用ナビゲーション (画面幅が狭い場合のみ表示) */}
+        {onNavigate && (
+          <div className="md:hidden border-t border-gray-200 py-2 flex justify-around">
+            <button
+              type="button"
+              onClick={() => onNavigate('dashboard')}
+              className={`flex-1 py-2 text-center text-sm font-medium ${
+                currentView === 'dashboard' ? 'text-indigo-600' : 'text-gray-500'
+              }`}
+            >
+              ダッシュボード
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('ranking')}
+              className={`flex-1 py-2 text-center text-sm font-medium ${
+                currentView === 'ranking' ? 'text-indigo-600' : 'text-gray-500'
+              }`}
+            >
+              ランキング 🏆
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
