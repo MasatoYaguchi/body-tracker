@@ -179,6 +179,55 @@ class authApiClient {
   }
 
   /**
+   * ユーザープロフィール（表示名）を更新
+   *
+   * @param token - JWTトークン
+   * @param displayName - 新しい表示名
+   * @returns Promise<User> 更新後のユーザー情報
+   */
+  async updateProfile(token: string, displayName: string): Promise<User> {
+    console.log('👤 プロフィール更新API開始');
+
+    try {
+      const response = await fetch(`${this.baseURL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ displayName }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData: AuthError;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          console.error('❌ 非JSONエラーレスポンス:', errorText);
+          errorData = { error: `Request failed (${response.status}): ${errorText}` };
+        }
+
+        throw new AuthenticationError(
+          errorData.error || 'Failed to update profile',
+          'UPDATE_FAILED',
+        );
+      }
+
+      const user: User = await response.json();
+      console.log('✅ プロフィール更新成功:', user.name);
+
+      return user;
+    } catch (error) {
+      console.error('❌ プロフィール更新失敗:', error);
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+      throw new AuthenticationError('Failed to update profile', 'NETWORK_ERROR');
+    }
+  }
+
+  /**
    * サーバー側でログアウト処理を実行
    *
    * @param token - JWTトークン
@@ -257,18 +306,24 @@ export const authApi = new authApiClient();
  * Destructuring methods from the instance (e.g. `const { exchangeAuthorizationCode } = authApi`) would
  * otherwise call the method with undefined `this` and break access to instance fields.
  */
-export const authenticateWithGoogle = (...args: any[]) =>
-  authApi.authenticateWithGoogle.apply(authApi, args as any);
+export const authenticateWithGoogle = (
+  ...args: Parameters<typeof authApi.authenticateWithGoogle>
+) => authApi.authenticateWithGoogle(...args);
 
-export const getCurrentUser = (...args: any[]) =>
-  authApi.getCurrentUser.apply(authApi, args as any);
+export const getCurrentUser = (...args: Parameters<typeof authApi.getCurrentUser>) =>
+  authApi.getCurrentUser(...args);
 
-export const logout = (...args: any[]) => authApi.logout.apply(authApi, args as any);
+export const updateProfile = (...args: Parameters<typeof authApi.updateProfile>) =>
+  authApi.updateProfile(...args);
 
-export const healthCheck = (...args: any[]) => authApi.healthCheck.apply(authApi, args as any);
+export const logout = (...args: Parameters<typeof authApi.logout>) => authApi.logout(...args);
 
-export const exchangeAuthorizationCode = (...args: any[]) =>
-  authApi.exchangeAuthorizationCode.apply(authApi, args as any);
+export const healthCheck = (...args: Parameters<typeof authApi.healthCheck>) =>
+  authApi.healthCheck(...args);
+
+export const exchangeAuthorizationCode = (
+  ...args: Parameters<typeof authApi.exchangeAuthorizationCode>
+) => authApi.exchangeAuthorizationCode(...args);
 
 /**
  * AuthenticationErrorかどうかを判定する型ガード

@@ -145,7 +145,7 @@ export async function findOrCreateUser(googlePayload: GoogleTokenPayload): Promi
         id: user.id,
         email: user.email,
         username: user.username,
-        displayName: googlePayload.name, // Googleから最新情報を使用
+        displayName: user.displayName || googlePayload.name, // DBの値があればそれを使用、なければGoogleの情報
         avatarUrl: googlePayload.picture, // Googleから最新情報を使用
         googleId: googlePayload.sub,
       };
@@ -160,6 +160,7 @@ export async function findOrCreateUser(googlePayload: GoogleTokenPayload): Promi
         // idは自動生成されるため省略
         username: `user_${Date.now()}`,
         email: googlePayload.email,
+        displayName: googlePayload.name, // 初期値としてGoogleの名前を保存
       })
       .returning();
 
@@ -169,7 +170,7 @@ export async function findOrCreateUser(googlePayload: GoogleTokenPayload): Promi
       id: newUser.id,
       email: newUser.email,
       username: newUser.username,
-      displayName: googlePayload.name,
+      displayName: newUser.displayName || googlePayload.name,
       avatarUrl: googlePayload.picture,
       googleId: googlePayload.sub,
     };

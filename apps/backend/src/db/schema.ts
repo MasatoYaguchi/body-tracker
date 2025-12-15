@@ -6,7 +6,7 @@ export const users = pgTable('users', {
   username: varchar('username', { length: 50 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   passwordHash: varchar('password_hash', { length: 255 }),
-  // displayName: varchar('display_name', { length: 100 }), // 削除
+  displayName: varchar('display_name', { length: 100 }),
   createdAt: timestamp('created_at', { withTimezone: true }),
   updatedAt: timestamp('updated_at', { withTimezone: true }),
 });

@@ -10,6 +10,7 @@ import { DashboardHeader } from './DashboardHeader';
 import { QuickRecordForm } from './QuickRecordForm';
 import { RecentRecords } from './RecentRecords';
 import { StatsCard } from './StatsCard';
+import { WeightChart } from './WeightChart';
 
 // ===== API関数（認証対応版） =====
 
@@ -161,6 +162,9 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
           latestRecord={latestRecord}
         />
       </div>
+
+      {/* 推移グラフ */}
+      <WeightChart records={records} />
 
       {/* 最近の記録一覧 */}
       <RecentRecords

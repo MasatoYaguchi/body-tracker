@@ -14,6 +14,8 @@ React 19 + Hono + PostgreSQL + Drizzle + pnpm Workspaces + Tailwind CSS で構�
 
 ## セットアップ
 
+> デフォルトでは `apps/backend/.env` の `DATABASE_URL` が Neon (マネージドPostgreSQL) を指しており、DockerでPostgresを起動しなくても動作します。ローカルDBを使いたい場合だけ docker-compose を起動してください。
+
 ```bash
 # 依存関係インストール
 pnpm install
@@ -83,6 +85,10 @@ pnpm check:fix
 # 共有パッケージ → 全体ビルド
 pnpm build:shared && pnpm build
 ```
+
+### データベース切り替えメモ
+- そのまま動かす: `apps/backend/.env` の Neon 接続文字列を使うので Docker 不要
+- ローカルで動かす: `DATABASE_URL=postgresql://developer:password123@localhost:5432/body_tracker` に変更し、`docker compose up -d postgres` を実行
 
 ## 今後の拡張アイデア
 

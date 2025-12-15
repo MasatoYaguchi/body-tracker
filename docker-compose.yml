@@ -1,3 +1,5 @@
+# NOTE: デフォルトではバックエンドは Neon のリモートDBに接続しています。
+# ローカルPostgreSQLに切り替えたいときだけこの compose を起動してください。
 services:
   # PostgreSQLデータベース
   postgres:
