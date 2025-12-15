@@ -290,7 +290,7 @@ auth.put(
       });
     } catch (error) {
       console.error('❌ Profile update error:', error);
-      return c.json({ error: 'Failed to update profile' }, 500);
+      return c.json({ error: 'プロフィールの更新に失敗しました' }, 500);
     }
   },
 );
