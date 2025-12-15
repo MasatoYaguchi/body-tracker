@@ -29,7 +29,7 @@ export function QuickRecordForm({
   const [bodyFat, setBodyFat] = useState(latestRecord?.bodyFatPercentage.toString() || '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  console.log('🌸QuickRecordForm: latestRecord', latestRecord);
+
   /**
    * フォーム送信処理
    */

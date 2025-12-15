@@ -129,11 +129,17 @@ export function UserHeader({
             {/* ドロップダウンメニュー */}
             {isMenuOpen && (
               <>
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: Overlay for mouse users */}
                 <div
                   className="fixed inset-0 z-40"
                   onClick={() => setIsMenuOpen(false)}
-                  aria-hidden="true"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                      setIsMenuOpen(false);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Close menu"
                 />
                 <div className="absolute top-full left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 py-1">
                   <button

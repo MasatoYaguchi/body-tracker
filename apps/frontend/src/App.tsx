@@ -21,7 +21,7 @@ function AppContent(): React.ReactElement {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // ユーザー名が未設定の場合、または手動で開いた場合にモーダルを表示
-  const showNameRegistration = (user && !user.name) || isProfileModalOpen;
+  const shouldShowProfileModal = (!!user && !user.name) || isProfileModalOpen;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,7 +41,7 @@ function AppContent(): React.ReactElement {
           </main>
           {/* ユーザー名登録モーダル */}
           <UserNameRegistrationModal
-            isOpen={!!showNameRegistration}
+            isOpen={shouldShowProfileModal}
             onClose={() => setIsProfileModalOpen(false)}
           />
         </div>,
