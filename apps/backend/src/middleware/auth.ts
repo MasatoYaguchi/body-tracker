@@ -1,6 +1,7 @@
 import type { Context, Next } from 'hono';
 import type { JwtPayload } from 'jsonwebtoken';
 import { verifyJWT } from '../auth/google';
+import type { Bindings } from '../types';
 
 // 認証済みユーザーのJWTペイロード型定義
 interface AuthenticatedUser extends JwtPayload {
@@ -11,12 +12,6 @@ interface AuthenticatedUser extends JwtPayload {
 
 /**
  * 認証ミドルウェア
- *
- * 学習ポイント:
- * - APIエンドポイントの前に実行される
- * - JWTトークンの検証を自動化
- * - 認証済みユーザー情報をコンテキストに設定
- * - next()で次の処理に進む/エラーレスポンスで停止
  */
 export async function authMiddleware(c: Context, next: Next) {
   try {
@@ -44,7 +39,8 @@ export async function authMiddleware(c: Context, next: Next) {
     }
 
     // Step 3: JWTトークンの検証
-    const decoded = verifyJWT(token);
+    const env = c.env as Bindings;
+    const decoded = verifyJWT(token, env.JWT_SECRET);
 
     // Step 4: 型ガード - JwtPayloadであることを確認
     if (typeof decoded === 'string') {
@@ -79,10 +75,6 @@ export async function authMiddleware(c: Context, next: Next) {
 
 /**
  * 認証が必要なAPIでユーザー情報を取得するヘルパー関数
- *
- * 使用例:
- * const user = getAuthenticatedUser(c);
- * console.log('現在のユーザー:', user.email);
  */
 export function getAuthenticatedUser(c: Context): AuthenticatedUser {
   const user = c.get('user') as AuthenticatedUser;
@@ -96,11 +88,6 @@ export function getAuthenticatedUser(c: Context): AuthenticatedUser {
 
 /**
  * オプショナル認証ミドルウェア
- *
- * 学習ポイント:
- * - 認証は試行するが、失敗してもエラーにしない
- * - ログイン済みユーザーには追加機能、未ログインでも基本機能は利用可能
- * - 例: 公開記事の閲覧（未ログイン）vs いいね機能（ログイン必要）
  */
 export async function optionalAuthMiddleware(c: Context, next: Next) {
   try {
@@ -110,7 +97,8 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
       const token = authHeader.substring(7);
 
       if (token) {
-        const decoded = verifyJWT(token);
+        const env = c.env as Bindings;
+        const decoded = verifyJWT(token, env.JWT_SECRET);
 
         // 型ガード
         if (typeof decoded !== 'string') {
