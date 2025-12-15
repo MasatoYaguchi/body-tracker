@@ -60,6 +60,7 @@ export function LoadingSpinner({
     <div className={`${containerClass} ${className}`}>
       <div className="text-center">
         {/* The elements with the following roles can be changed to the following elements:<output> */}
+        {/* biome-ignore lint/a11y/useSemanticElements: Keeping div for styling consistency */}
         <div
           role="status"
           aria-live="polite"

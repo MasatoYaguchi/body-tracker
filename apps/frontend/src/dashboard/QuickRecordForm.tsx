@@ -1,6 +1,7 @@
 // apps/frontend/src/components/dashboard/QuickRecordForm.tsx
-// クイック記録追加フォームコンポーネント
+// 記録追加フォームコンポーネント
 
+import type { BodyRecord } from '@body-tracker/shared/dist/types';
 import { useState } from 'react';
 import { api } from './Dashboard';
 
@@ -10,6 +11,8 @@ import { api } from './Dashboard';
 export interface QuickRecordFormProps {
   /** 記録追加後のコールバック */
   onRecordAdded: () => void;
+  /** 最新の記録（オプション） */
+  latestRecord?: BodyRecord | null;
 }
 
 /**
@@ -18,9 +21,12 @@ export interface QuickRecordFormProps {
  * @param props - QuickRecordFormProps
  * @returns React.ReactElement
  */
-export function QuickRecordForm({ onRecordAdded }: QuickRecordFormProps): React.ReactElement {
-  const [weight, setWeight] = useState('');
-  const [bodyFat, setBodyFat] = useState('');
+export function QuickRecordForm({
+  onRecordAdded,
+  latestRecord,
+}: QuickRecordFormProps): React.ReactElement {
+  const [weight, setWeight] = useState(latestRecord?.weight.toString() || '');
+  const [bodyFat, setBodyFat] = useState(latestRecord?.bodyFatPercentage.toString() || '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,8 +63,7 @@ export function QuickRecordForm({ onRecordAdded }: QuickRecordFormProps): React.
       });
 
       // フォームをリセット
-      setWeight('');
-      setBodyFat('');
+
       setDate(new Date().toISOString().split('T')[0]);
 
       // データ再読み込み
@@ -116,8 +121,8 @@ export function QuickRecordForm({ onRecordAdded }: QuickRecordFormProps): React.
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
             step="0.1"
-            min="0"
-            max="1000"
+            min="10"
+            max="150"
             className="form-input"
             placeholder="例: 65.5"
             required
@@ -134,8 +139,8 @@ export function QuickRecordForm({ onRecordAdded }: QuickRecordFormProps): React.
             value={bodyFat}
             onChange={(e) => setBodyFat(e.target.value)}
             step="0.1"
-            min="0"
-            max="100"
+            min="1"
+            max="50"
             className="form-input"
             placeholder="例: 15.5"
             required

@@ -150,17 +150,31 @@ auth.get('/me', authMiddleware, async (c) => {
     // 認証ミドルウェアで設定されたユーザー情報を取得
     const userPayload = getAuthenticatedUser(c);
 
-    console.log('✅ ユーザー情報取得成功:', userPayload.email);
+    // DBから最新のユーザー情報を取得（displayNameなどが更新されている可能性があるため）
+    const { db } = await import('../db/connection');
+    const { users } = await import('../db/schema');
+    const { eq } = await import('drizzle-orm');
 
-    // JWTペイロードから基本情報を返す
+    const [user] = await db.select().from(users).where(eq(users.id, userPayload.userId)).limit(1);
+
+    if (!user) {
+      return c.json({ error: 'ユーザーが見つかりません' }, 404);
+    }
+
+    console.log('✅ ユーザー情報取得成功:', user.email);
+
     return c.json({
-      id: userPayload.userId,
-      email: userPayload.email,
+      id: user.id,
+      email: user.email,
+      name: user.displayName,
+      // googleIdはDBに保存していない場合はJWTから取得、あるいはDBに追加が必要だが
+      // 現状のスキーマにはgoogleIdカラムがないため、JWTの値を返すか、省略する
+      // ここではJWTの値を返すことにする（userPayload.googleId）
       googleId: userPayload.googleId,
     });
   } catch (error) {
     console.error('❌ Get user error:', error);
-    return c.json({ error: 'Failed to get user information' }, 500);
+    return c.json({ error: 'ユーザー情報の取得に失敗しました' }, 500);
   }
 });
 
@@ -186,7 +200,7 @@ auth.post('/logout', authMiddleware, async (c) => {
     return c.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('❌ Logout error:', error);
-    return c.json({ error: 'Logout failed' }, 500);
+    return c.json({ error: 'ログアウトに失敗しました' }, 500);
   }
 });
 
@@ -220,11 +234,65 @@ auth.get('/status', authMiddleware, async (c) => {
     return c.json(
       {
         authenticated: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : '不明なエラー',
       },
       401,
     );
   }
 });
+
+/**
+ * プロフィール更新エンドポイント
+ * PUT /api/auth/profile
+ */
+auth.put(
+  '/profile',
+  authMiddleware,
+  validator('json', (value, c) => {
+    if (!value.displayName || typeof value.displayName !== 'string') {
+      return c.json({ error: '表示名は必須です' }, 400);
+    }
+    if (value.displayName.length > 50) {
+      return c.json({ error: '表示名は50文字以内で入力してください' }, 400);
+    }
+    return value;
+  }),
+  async (c) => {
+    try {
+      const userPayload = getAuthenticatedUser(c);
+      const { displayName } = c.req.valid('json');
+
+      const { db } = await import('../db/connection');
+      const { users } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      console.log('👤 プロフィール更新リクエスト:', userPayload.email, displayName);
+
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          displayName: displayName,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userPayload.userId))
+        .returning();
+
+      if (!updatedUser) {
+        return c.json({ error: 'ユーザーが見つかりません' }, 404);
+      }
+
+      console.log('✅ プロフィール更新完了:', updatedUser.displayName);
+
+      return c.json({
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.displayName,
+      });
+    } catch (error) {
+      console.error('❌ Profile update error:', error);
+      return c.json({ error: 'プロフィールの更新に失敗しました' }, 500);
+    }
+  },
+);
 
 export default auth;

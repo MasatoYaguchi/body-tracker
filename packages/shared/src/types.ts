@@ -17,7 +17,7 @@ export interface Stats {
 export interface CreateBodyRecordRequest {
   weight: number;
   bodyFatPercentage: number;
-  date: string;
+  date: string; // ISO形式の日付文字列 TODO: Date型に変更またバリデーションを追加 (別PRで対応予定)
 }
 
 export interface UpdateBodyRecordRequest extends CreateBodyRecordRequest {}

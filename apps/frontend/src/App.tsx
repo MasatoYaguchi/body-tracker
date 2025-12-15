@@ -1,10 +1,13 @@
-import { Suspense } from 'react';
-import { AuthProvider, useAuthConditional } from './auth';
+import { Suspense, useState } from 'react';
+import { AuthProvider, useAuth, useAuthConditional } from './auth';
 import { AuthCallback } from './auth/components/AuthCallback';
+import { UserNameRegistrationModal } from './auth/components/UserNameRegistrationModal';
 import { Dashboard } from './dashboard/Dashboard';
 import { LoginScreen } from './layout/LoginScreen';
 import { UserHeader } from './layout/UserHeader';
+import { RankingPage } from './ranking/RankingPage';
 import { LoadingSpinner } from './ui/LoadingSpinner';
+
 /**
  * 🆕 React 19新機能を活用したメインアプリケーションコンテンツ
  *
@@ -12,7 +15,13 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
  * - 分割されたコンポーネントによる保守性向上
  */
 function AppContent(): React.ReactElement {
+  const { user } = useAuth();
   const { showForAuth, showForGuest, showWhileLoading } = useAuthConditional();
+  const [currentView, setCurrentView] = useState<'dashboard' | 'ranking'>('dashboard');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // ユーザー名が未設定の場合、または手動で開いた場合にモーダルを表示
+  const shouldShowProfileModal = (!!user && !user.name) || isProfileModalOpen;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -22,10 +31,19 @@ function AppContent(): React.ReactElement {
       {/* 認証済みユーザー向け */}
       {showForAuth(
         <div>
-          <UserHeader />
+          <UserHeader
+            currentView={currentView}
+            onNavigate={(view) => setCurrentView(view)}
+            onProfileClick={() => setIsProfileModalOpen(true)}
+          />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <Dashboard />
+            {currentView === 'dashboard' ? <Dashboard /> : <RankingPage />}
           </main>
+          {/* ユーザー名登録モーダル */}
+          <UserNameRegistrationModal
+            isOpen={shouldShowProfileModal}
+            onClose={() => setIsProfileModalOpen(false)}
+          />
         </div>,
       )}
 

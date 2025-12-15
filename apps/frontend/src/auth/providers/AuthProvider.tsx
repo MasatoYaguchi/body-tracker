@@ -1,10 +1,11 @@
 // apps/frontend/src/auth/providers/AuthProvider.tsx
 // 簡潔化された認証プロバイダー（React 19新機能活用）
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useAuthState } from '../hooks/useAuthState';
 import { authenticateWithGoogle, logout as logoutApi } from '../services/authApi';
-import type { AuthContextType } from '../types/auth.types';
+import { authStorage } from '../services/authStorage';
+import type { AuthContextType, User } from '../types/auth.types';
 import { AuthContext } from './AuthContext';
 
 /**
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     setLoggedIn,
     setLoggedOut,
     setLoading,
+    updateAuthState,
   } = useAuthState();
 
   // ===== 初期化処理 =====
@@ -159,24 +161,40 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     }
   }, [optimisticState.token, setLoggedOut]);
 
-  // ===== Context値の構築 =====
+  // ===== ユーザー情報更新処理 =====
 
   /**
-   * AuthContext に提供する値
-   *
-   * 🆕 React 19: useOptimistic状態を使用して即座なUI反映
+   * ユーザー情報を手動で更新
    */
-  const contextValue: AuthContextType = {
-    // 🆕 React 19: 楽観的更新された状態
-    ...optimisticState,
+  const updateUser = useCallback(
+    (user: User) => {
+      // ストレージ更新
+      const currentToken = optimisticState.token;
+      if (currentToken) {
+        authStorage.saveAuthData({ user, token: currentToken });
+      }
+      // 状態更新
+      updateAuthState({ user });
+    },
+    [optimisticState.token, updateAuthState],
+  );
 
-    // 🆕 React 19: useTransition状態
-    isTransitioning,
+  // ===== Context値の作成 =====
 
-    // 認証アクション
-    login,
-    logout,
-  };
+  /**
+   * Contextに提供する値
+   * メモ化して不要な再レンダリングを防止
+   */
+  const contextValue: AuthContextType = useMemo(
+    () => ({
+      ...optimisticState,
+      login,
+      logout,
+      updateUser,
+      isTransitioning,
+    }),
+    [optimisticState, login, logout, updateUser, isTransitioning],
+  );
 
   // ===== レンダリング =====
 

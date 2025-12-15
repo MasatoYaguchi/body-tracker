@@ -49,6 +49,11 @@ export interface AuthContextType extends AuthState {
    * @throws {AuthenticationError} ログアウト失敗時
    */
   logout: () => Promise<void>;
+  /**
+   * ユーザー情報を手動で更新
+   * @param user - 新しいユーザー情報
+   */
+  updateUser: (user: User) => void;
   /** 🆕 React 19: useTransitionによる処理中状態 */
   isTransitioning: boolean;
 }
