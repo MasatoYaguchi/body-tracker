@@ -3,6 +3,7 @@
 
 import type { AuthError, GoogleAuthResponse, User } from '../types/auth.types';
 import { AuthenticationError } from '../types/auth.types';
+import { authStorage } from './authStorage';
 
 // ===== 設定 =====
 
@@ -21,6 +22,40 @@ class authApiClient {
    */
   constructor(baseURL: string = API_BASE) {
     this.baseURL = baseURL;
+  }
+
+  /**
+   * 認証付きでAPIリクエストを実行
+   * @param endpoint - APIエンドポイント (例: 'ranking')
+   * @param options - fetchオプション
+   */
+  async fetchWithAuth(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const token = authStorage.getToken();
+    if (!token) {
+      throw new AuthenticationError('No authentication token found', 'AUTH_REQUIRED');
+    }
+
+    // エンドポイントの先頭の/を削除
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const url = `${this.baseURL}/${cleanEndpoint}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+    };
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (response.status === 401) {
+      authStorage.clearAll();
+      throw new AuthenticationError('Session expired', 'SESSION_EXPIRED');
+    }
+
+    return response;
   }
 
   /**

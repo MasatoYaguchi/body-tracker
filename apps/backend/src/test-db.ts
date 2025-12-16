@@ -1,11 +1,20 @@
-import { db, testConnection } from './db/connection';
+import 'dotenv/config';
+import { createDb, testConnection } from './db/connection';
 import { users } from './db/schema';
 
-async function main() {
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not defined');
+}
+
+const db = createDb(connectionString);
+
+async function main(connStr: string) {
   console.log('🔍 Testing database connection...');
 
   // 接続テスト
-  await testConnection();
+  await testConnection(connStr);
 
   // データ取得テスト
   console.log('📊 Fetching users...');
@@ -14,4 +23,4 @@ async function main() {
   console.log('Users:', allUsers);
 }
 
-main().catch(console.error);
+main(connectionString).catch(console.error);

@@ -1,77 +1,43 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { authApi } from '../auth/services/authApi';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { RankingTable } from './RankingTable';
 import type { RankingData } from './types';
 
-// ダミーデータ (API実装までのプレースホルダー)
-const DUMMY_DATA: RankingData = {
-  competitionName: '2025年ボディメイクチャレンジ',
-  startDate: '2025-06-01',
-  endDate: '2025-12-31',
-  rankings: [
-    {
-      rank: 1,
-      userId: 'user_a',
-      username: 'Aさん',
-      baselineWeight: 75.5,
-      currentWeight: 71.2,
-      weightLossRate: 5.7,
-      baselineBodyFat: 22.0,
-      currentBodyFat: 19.5,
-      bodyFatLossRate: 11.4,
-      totalScore: 17.1,
-      recordedAt: '2025-12-14T10:00:00Z',
-    },
-    {
-      rank: 2,
-      userId: 'user_b',
-      username: 'Bさん',
-      baselineWeight: 68.0,
-      currentWeight: 65.1,
-      weightLossRate: 4.3,
-      baselineBodyFat: 25.0,
-      currentBodyFat: 22.0,
-      bodyFatLossRate: 12.0,
-      totalScore: 16.3,
-      recordedAt: '2025-12-14T09:30:00Z',
-    },
-    {
-      rank: 3,
-      userId: 'user_c',
-      username: 'Cさん',
-      baselineWeight: 82.3,
-      currentWeight: 78.1,
-      weightLossRate: 5.1,
-      baselineBodyFat: 28.5,
-      currentBodyFat: 26.2,
-      bodyFatLossRate: 8.1,
-      totalScore: 13.2,
-      recordedAt: '2025-12-13T20:15:00Z',
-    },
-  ],
-};
-
 export function RankingPage(): React.ReactElement {
   const [data, setData] = useState<RankingData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // APIコールのシミュレーション
-    const timer = setTimeout(() => {
-      setData(DUMMY_DATA);
-      setLoading(false);
-    }, 800);
+    const fetchRanking = async () => {
+      try {
+        const response = await authApi.fetchWithAuth('ranking');
+        if (!response.ok) {
+          throw new Error('ランキングデータの取得に失敗しました');
+        }
+        const rankingData = await response.json();
+        setData(rankingData);
+      } catch (err) {
+        console.error('Ranking fetch error:', err);
+        setError('データの取得に失敗しました');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    fetchRanking();
   }, []);
 
   if (loading) {
     return <LoadingSpinner size="large" message="ランキングを集計中..." />;
   }
 
-  if (!data) {
-    return <div className="text-center py-10 text-red-500">データの取得に失敗しました</div>;
+  if (error || !data) {
+    return (
+      <div className="text-center py-10 text-red-500">{error || 'データの取得に失敗しました'}</div>
+    );
   }
 
   return (
@@ -99,7 +65,14 @@ export function RankingPage(): React.ReactElement {
           </div>
         </div>
 
-        <RankingTable participants={data.rankings} />
+        {data.rankings.length < 2 ? (
+          <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-lg">
+            <p className="text-lg font-medium">対象のユーザーがいません</p>
+            <p className="text-sm mt-2">ランキングを表示するには2名以上の参加者が必要です。</p>
+          </div>
+        ) : (
+          <RankingTable participants={data.rankings} />
+        )}
 
         <div className="mt-6 text-right text-xs text-gray-400">
           最終更新: {new Date().toLocaleString()}

@@ -7,6 +7,7 @@ import { createDb } from './db/connection';
 import { bodyRecords } from './db/schema';
 import { authMiddleware, getAuthenticatedUser } from './middleware/auth';
 import authRoutes from './routes/auth';
+import rankingRoutes from './routes/ranking';
 import type { Bindings, Variables } from './types';
 
 // サーバーの初期化
@@ -45,6 +46,9 @@ app.use(
 
 // 🔐 認証ルート（認証不要）
 app.route('/api/auth', authRoutes);
+
+// 🏆 ランキングルート
+app.route('/api/ranking', rankingRoutes);
 
 // バリデーションスキーマ
 const bodyRecordValidator = validator('json', (value, c) => {
