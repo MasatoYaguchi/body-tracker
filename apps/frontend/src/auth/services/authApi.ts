@@ -7,7 +7,7 @@ import { authStorage } from './authStorage';
 
 // ===== 設定 =====
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787/api';
 
 /**
  * 認証API通信クライアント
@@ -18,7 +18,7 @@ class authApiClient {
 
   /**
    * APIクライアントを初期化
-   * @param baseURL - APIのベースURL（デフォルト: http://localhost:8000/api）
+   * @param baseURL - APIのベースURL（デフォルト: http://localhost:8787/api）
    */
   constructor(baseURL: string = API_BASE) {
     this.baseURL = baseURL;

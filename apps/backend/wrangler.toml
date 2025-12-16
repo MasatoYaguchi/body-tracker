@@ -1,6 +1,7 @@
 name = "body-tracker-backend"
 main = "src/server.ts"
 compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 # Secrets should be set via `wrangler secret put`

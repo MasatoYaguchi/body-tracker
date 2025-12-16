@@ -61,8 +61,7 @@ export function QuickRecordForm({
         date,
       });
 
-      // フォームをリセット
-
+      // 日付のみリセット（連続入力のため体重・体脂肪率は保持）
       setDate(new Date().toISOString().split('T')[0]);
 
       // データ再読み込み
@@ -121,7 +120,7 @@ export function QuickRecordForm({
             onChange={(e) => setWeight(e.target.value)}
             step="0.1"
             min="10"
-            max="150"
+            max="200"
             className="form-input"
             placeholder="例: 65.5"
             required

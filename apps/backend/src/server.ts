@@ -21,10 +21,8 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
  * - これにより、ルートハンドラ内で `c.var.db` としてDBにアクセスできる
  */
 app.use('*', async (c, next) => {
-  if (!c.var.db) {
-    const db = createDb(c.env.DATABASE_URL);
-    c.set('db', db);
-  }
+  const db = createDb(c.env.DATABASE_URL);
+  c.set('db', db);
   await next();
 });
 
@@ -32,12 +30,26 @@ app.use('*', async (c, next) => {
 app.use(
   '/*',
   cors({
-    origin: [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://localhost:3001',
-      'https://body-tracker.pages.dev', // Cloudflare Pages
-    ],
+    origin: (origin) => {
+      if (!origin) return null;
+      // Allow localhost and 127.0.0.1 for local development
+      if (
+        origin.startsWith('http://localhost:3000') ||
+        origin.startsWith('http://127.0.0.1:3000') ||
+        origin.startsWith('http://localhost:3001')
+      ) {
+        return origin;
+      }
+      // Allow production Cloudflare Pages
+      if (origin === 'https://body-tracker.pages.dev') {
+        return origin;
+      }
+      // Allow preview deployments: https://<hash>.body-tracker.pages.dev
+      if (/^https:\/\/[a-z0-9-]+\.body-tracker\.pages\.dev$/.test(origin)) {
+        return origin;
+      }
+      return null;
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -120,7 +132,7 @@ app.post('/api/records', authMiddleware, bodyRecordValidator, async (c) => {
         userId: userPayload.userId, // 認証されたユーザーのID
         weight: weight.toString(),
         bodyFatPercentage: bodyFatPercentage.toString(),
-        recordedDate: date,
+        recordedDate: new Date(date),
       })
       .returning();
 
@@ -162,7 +174,7 @@ app.put('/api/records/:id', authMiddleware, bodyRecordValidator, async (c) => {
       .set({
         weight: weight.toString(),
         bodyFatPercentage: bodyFatPercentage.toString(),
-        recordedDate: date,
+        recordedDate: new Date(date),
       })
       .where(and(eq(bodyRecords.id, id), eq(bodyRecords.userId, userPayload.userId)))
       .returning();

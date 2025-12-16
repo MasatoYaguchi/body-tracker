@@ -1,13 +1,15 @@
 import type { Context, Next } from 'hono';
-import type { JwtPayload } from 'jsonwebtoken';
 import { verifyJWT } from '../auth/google';
 import type { Bindings } from '../types';
 
 // 認証済みユーザーのJWTペイロード型定義
-interface AuthenticatedUser extends JwtPayload {
+interface AuthenticatedUser {
   userId: string;
   email: string;
   googleId: string;
+  iss: string;
+  aud: string;
+  exp: number;
 }
 
 /**
@@ -40,11 +42,11 @@ export async function authMiddleware(c: Context, next: Next) {
 
     // Step 3: JWTトークンの検証
     const env = c.env as Bindings;
-    const decoded = verifyJWT(token, env.JWT_SECRET);
+    const decoded = await verifyJWT(token, env.JWT_SECRET);
 
     // Step 4: 型ガード - JwtPayloadであることを確認
-    if (typeof decoded === 'string') {
-      console.log('❌ JWT検証結果が文字列です');
+    if (!decoded || typeof decoded !== 'object') {
+      console.log('❌ JWT検証結果が無効です');
       return c.json({ error: 'Invalid token format' }, 401);
     }
 

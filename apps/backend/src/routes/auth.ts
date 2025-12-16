@@ -61,7 +61,7 @@ auth.post('/google', googleAuthValidator, async (c) => {
     const user = await findOrCreateUser(googlePayload, c.var.db);
 
     // Step 4: JWTトークン生成
-    const token = generateJWT(user, c.env.JWT_SECRET);
+    const token = await generateJWT(user, c.env.JWT_SECRET);
 
     console.log('✅ Google認証完了:', user.email);
 
@@ -121,7 +121,7 @@ auth.post(
         return c.json({ error: 'Email not verified by Google' }, 400);
       }
       const user = await findOrCreateUser(googlePayload, c.var.db);
-      const token = generateJWT(user, c.env.JWT_SECRET);
+      const token = await generateJWT(user, c.env.JWT_SECRET);
       return c.json({
         user: {
           id: user.id,
@@ -249,9 +249,15 @@ auth.put(
     if (!value.displayName || typeof value.displayName !== 'string') {
       return c.json({ error: 'Display name is required' }, 400);
     }
-    if (value.displayName.length > 50) {
+    const trimmedName = value.displayName.trim();
+    if (trimmedName.length === 0) {
+      return c.json({ error: 'Display name cannot be empty' }, 400);
+    }
+    if (trimmedName.length > 50) {
       return c.json({ error: 'Display name must be 50 characters or less' }, 400);
     }
+    // トリム済みの値を返す
+    value.displayName = trimmedName;
     return value;
   }),
   async (c) => {

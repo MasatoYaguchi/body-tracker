@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm';
 // apps/backend/src/auth/google.ts
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
-import { OAuth2Client } from 'google-auth-library';
-import jwt, { type JwtPayload } from 'jsonwebtoken';
+import { sign, verify } from 'hono/jwt';
 import * as schema from '../db/schema';
 
 // Google認証から取得される情報の型定義
@@ -34,17 +33,17 @@ export async function verifyGoogleToken(
   try {
     console.log('🔍 Google認証トークンを検証中...');
 
-    const client = new OAuth2Client(clientId);
+    // Googleのtokeninfoエンドポイントを使用して検証
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
 
-    // Google OAuth2Clientを使用してトークン検証
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: clientId, // このアプリ宛てのトークンかチェック
-    });
+    if (!response.ok) {
+      throw new Error('Failed to verify token with Google');
+    }
 
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new Error('Invalid Google token payload');
+    const payload = (await response.json()) as any;
+
+    if (payload.aud !== clientId) {
+      throw new Error('Token audience mismatch');
     }
 
     console.log('✅ Google認証トークンの検証成功:', {
@@ -58,7 +57,7 @@ export async function verifyGoogleToken(
       email: payload.email ?? 'no email',
       name: payload.name ?? 'no name',
       picture: payload.picture,
-      email_verified: !!payload.email_verified,
+      email_verified: payload.email_verified === 'true' || payload.email_verified === true,
     };
   } catch (error) {
     console.error('❌ Google token verification failed:', error);
@@ -84,29 +83,50 @@ export async function exchangeCodeForIdToken(
     throw new Error('Google OAuth client credentials not set');
   }
 
-  // redirectUri の簡易バリデーション（本番導入時は許可リスト化）
-  // Cloudflare PagesのプレビューURLなども考慮する必要があるため、正規表現を緩和するか、環境変数で許可リストを管理するのが望ましい
-  // ここでは一旦localhostと本番ドメイン(後で設定)を許可する形にするが、
-  // 厳密には呼び出し元でチェックすべき
-  // if (!/^http:\/\/localhost:3000\/(gsi-test\.html|auth\/callback)$/.test(redirectUri)) {
-  //   throw new Error('Invalid redirectUri');
-  // }
+  // redirectUri の簡易バリデーション
+  const allowedOrigins = [
+    /^http:\/\/localhost:3000\/(gsi-test\.html|auth\/callback)$/,
+    /^https:\/\/body-tracker\.pages\.dev\/auth\/callback$/,
+    /^https:\/\/[a-z0-9-]+\.body-tracker\.pages\.dev\/auth\/callback$/, // Preview URLs
+  ];
+
+  if (!allowedOrigins.some((pattern) => pattern.test(redirectUri))) {
+    throw new Error('Invalid redirectUri');
+  }
 
   try {
-    const oauthClient = new OAuth2Client(clientId, clientSecret, redirectUri);
-
-    const { tokens } = await oauthClient.getToken({
+    const tokenEndpoint = 'https://oauth2.googleapis.com/token';
+    const body = new URLSearchParams({
       code,
-      codeVerifier,
+      client_id: clientId,
+      client_secret: clientSecret,
       redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+      code_verifier: codeVerifier,
     });
 
-    const idToken = tokens.id_token ?? undefined;
+    const response = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Google Token Endpoint Error:', errorText);
+      throw new Error(`Token exchange failed: ${response.statusText}`);
+    }
+
+    const tokens = (await response.json()) as any;
+
+    const idToken = tokens.id_token;
     if (!idToken) {
       throw new Error('No id_token returned from Google');
     }
 
-    return { idToken, refreshToken: tokens.refresh_token ?? undefined };
+    return { idToken, refreshToken: tokens.refresh_token };
   } catch (e) {
     console.error('❌ Code exchange failed', e);
     throw new Error('Code exchange failed');
@@ -177,7 +197,7 @@ export async function findOrCreateUser(
 /**
  * JWT（JSON Web Token）生成
  */
-export function generateJWT(user: AuthUser, jwtSecret: string): string {
+export async function generateJWT(user: AuthUser, jwtSecret: string): Promise<string> {
   if (!jwtSecret) {
     throw new Error('JWT_SECRET environment variable is not set');
   }
@@ -189,17 +209,13 @@ export function generateJWT(user: AuthUser, jwtSecret: string): string {
     userId: user.id,
     email: user.email,
     googleId: user.googleId,
-    // 注意: パスワードや機密情報は含めない
+    // 標準クレーム
+    iss: 'body-tracker',
+    aud: 'body-tracker-users',
+    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // 30日間有効
   };
 
-  // JWT署名オプション（型を明示的に指定）
-  const options: jwt.SignOptions = {
-    expiresIn: '30d', // 30日間有効
-    issuer: 'body-tracker', // 発行者
-    audience: 'body-tracker-users', // 対象者
-  };
-
-  const token = jwt.sign(payload, jwtSecret, options);
+  const token = await sign(payload, jwtSecret);
 
   console.log('✅ JWT生成完了');
   return token;
@@ -208,7 +224,7 @@ export function generateJWT(user: AuthUser, jwtSecret: string): string {
 /**
  * JWT検証
  */
-export function verifyJWT(token: string, jwtSecret: string): string | JwtPayload {
+export async function verifyJWT(token: string, jwtSecret: string): Promise<any> {
   if (!jwtSecret) {
     throw new Error('JWT_SECRET environment variable is not set');
   }
@@ -216,26 +232,12 @@ export function verifyJWT(token: string, jwtSecret: string): string | JwtPayload
   try {
     console.log('🔍 JWT検証中...');
 
-    // JWT検証オプション
-    const options = {
-      issuer: 'body-tracker',
-      audience: 'body-tracker-users',
-    };
+    const decoded = await verify(token, jwtSecret);
 
-    const decoded = jwt.verify(token, jwtSecret, options);
-
-    console.log('✅ JWT検証成功:', typeof decoded === 'string' ? decoded : decoded?.email);
+    console.log('✅ JWT検証成功:', decoded.email);
     return decoded;
   } catch (error) {
     console.error('❌ JWT verification failed:', error);
-
-    // エラーの種類に応じた詳細メッセージ
-    if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Token has expired');
-    }
-    if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid token');
-    }
     throw new Error('Token verification failed');
   }
 }

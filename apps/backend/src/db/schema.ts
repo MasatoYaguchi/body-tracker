@@ -22,6 +22,8 @@ export const bodyRecords = pgTable('body_records', {
     precision: 4,
     scale: 2,
   }).notNull(),
+  // NOTE: このカラムは 'date' 型から 'timestamp with time zone' 型に移行されました。
+  // 既存のレコードの時刻部分は 00:00:00 に設定されますが、これは意図的な動作です。
   recordedDate: timestamp('recorded_date', { withTimezone: true }).notNull(),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }),

@@ -19,7 +19,7 @@ pnpm dev
 
 # Individual services  
 pnpm dev:frontend  # localhost:3000
-pnpm dev:backend   # localhost:8000
+pnpm dev:backend   # localhost:8787
 
 # Type-safe build order
 pnpm build:shared  # Always build shared types first
@@ -79,7 +79,7 @@ src/
 ## Integration Points
 
 ### API Communication
-- **Base URL**: Environment-based (`VITE_API_BASE` or localhost:8000)
+- **Base URL**: Environment-based (`VITE_API_BASE` or localhost:8787)
 - **CORS**: Configured for localhost:3000 with credentials
 - **Error format**: Consistent `ApiResponse<T>` wrapper with error/data fields
 - **Authentication**: Bearer token in Authorization header
