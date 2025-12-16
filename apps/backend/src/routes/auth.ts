@@ -162,7 +162,7 @@ auth.get('/me', authMiddleware, async (c) => {
       .limit(1);
 
     if (!user) {
-      return c.json({ error: 'User not found' }, 404);
+      return c.json({ error: 'ユーザーが見つかりません' }, 404);
     }
 
     console.log('✅ ユーザー情報取得成功:', user.email);
@@ -175,7 +175,7 @@ auth.get('/me', authMiddleware, async (c) => {
     });
   } catch (error) {
     console.error('❌ Get user error:', error);
-    return c.json({ error: 'Failed to get user information' }, 500);
+    return c.json({ error: 'ユーザー情報の取得に失敗しました' }, 500);
   }
 });
 
@@ -198,7 +198,7 @@ auth.post('/logout', authMiddleware, async (c) => {
     return c.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('❌ Logout error:', error);
-    return c.json({ error: 'Logout failed' }, 500);
+    return c.json({ error: 'ログアウトに失敗しました' }, 500);
   }
 });
 
@@ -231,7 +231,7 @@ auth.get('/status', authMiddleware, async (c) => {
     return c.json(
       {
         authenticated: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : '不明なエラー',
       },
       401,
     );
@@ -247,7 +247,7 @@ auth.put(
   authMiddleware,
   validator('json', (value, c) => {
     if (!value.displayName || typeof value.displayName !== 'string') {
-      return c.json({ error: 'Display name is required' }, 400);
+      return c.json({ error: '表示名は必須です' }, 400);
     }
     const trimmedName = value.displayName.trim();
     if (trimmedName.length === 0) {
@@ -277,7 +277,7 @@ auth.put(
         .returning();
 
       if (!updatedUser) {
-        return c.json({ error: 'User not found' }, 404);
+        return c.json({ error: 'ユーザーが見つかりません' }, 404);
       }
 
       console.log('✅ プロフィール更新完了:', updatedUser.displayName);
@@ -289,7 +289,7 @@ auth.put(
       });
     } catch (error) {
       console.error('❌ Profile update error:', error);
-      return c.json({ error: 'Failed to update profile' }, 500);
+      return c.json({ error: 'プロフィールの更新に失敗しました' }, 500);
     }
   },
 );

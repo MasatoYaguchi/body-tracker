@@ -13,6 +13,34 @@ export interface GoogleTokenPayload {
   email_verified: boolean; // メール認証済みかどうか
 }
 
+interface GoogleTokenInfo {
+  aud: string;
+  email: string;
+  email_verified: string | boolean;
+  name: string;
+  picture?: string;
+  sub: string;
+  [key: string]: unknown;
+}
+
+interface GoogleTokenResponse {
+  id_token: string;
+  refresh_token?: string;
+  access_token: string;
+  expires_in: number;
+  scope: string;
+  token_type: string;
+}
+
+export interface JWTPayload {
+  userId: string;
+  email: string;
+  googleId: string;
+  iss: string;
+  aud: string;
+  exp: number;
+}
+
 // アプリ内で使用するユーザー情報の型定義
 export interface AuthUser {
   id: string; // 内部ユーザーID
@@ -40,7 +68,7 @@ export async function verifyGoogleToken(
       throw new Error('Failed to verify token with Google');
     }
 
-    const payload = (await response.json()) as any;
+    const payload = (await response.json()) as GoogleTokenInfo;
 
     if (payload.aud !== clientId) {
       throw new Error('Token audience mismatch');
@@ -66,7 +94,8 @@ export async function verifyGoogleToken(
 }
 
 /**
- * Authorization Code + PKCE で受け取った code を Google Token Endpoint で交換し id_token を取得する
+ * Authorization Code + PKCE で受け取った code を Google Token Endpoint で交換し
+ * id_token を取得する
  */
 export async function exchangeCodeForIdToken(
   params: {
@@ -119,7 +148,7 @@ export async function exchangeCodeForIdToken(
       throw new Error(`Token exchange failed: ${response.statusText}`);
     }
 
-    const tokens = (await response.json()) as any;
+    const tokens = (await response.json()) as GoogleTokenResponse;
 
     const idToken = tokens.id_token;
     if (!idToken) {
@@ -224,7 +253,7 @@ export async function generateJWT(user: AuthUser, jwtSecret: string): Promise<st
 /**
  * JWT検証
  */
-export async function verifyJWT(token: string, jwtSecret: string): Promise<any> {
+export async function verifyJWT(token: string, jwtSecret: string): Promise<JWTPayload> {
   if (!jwtSecret) {
     throw new Error('JWT_SECRET environment variable is not set');
   }
@@ -232,7 +261,7 @@ export async function verifyJWT(token: string, jwtSecret: string): Promise<any> 
   try {
     console.log('🔍 JWT検証中...');
 
-    const decoded = await verify(token, jwtSecret);
+    const decoded = (await verify(token, jwtSecret)) as unknown as JWTPayload;
 
     console.log('✅ JWT検証成功:', decoded.email);
     return decoded;

@@ -1,7 +1,7 @@
 // apps/frontend/src/auth/providers/AuthProvider.tsx
 // 簡潔化された認証プロバイダー（React 19新機能活用）
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useAuthState } from '../hooks/useAuthState';
 import { authenticateWithGoogle, logout as logoutApi } from '../services/authApi';
 import { authStorage } from '../services/authStorage';
@@ -185,13 +185,16 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
    * Contextに提供する値
    * メモ化して不要な再レンダリングを防止
    */
-  const contextValue: AuthContextType = {
-    ...optimisticState,
-    login,
-    logout,
-    updateUser,
-    isTransitioning,
-  };
+  const contextValue: AuthContextType = useMemo(
+    () => ({
+      ...optimisticState,
+      login,
+      logout,
+      updateUser,
+      isTransitioning,
+    }),
+    [optimisticState, login, logout, updateUser, isTransitioning],
+  );
 
   // ===== レンダリング =====
 
