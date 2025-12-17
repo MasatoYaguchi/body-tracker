@@ -1,74 +1,80 @@
 name: Deploy
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    deploy-backend:
-        runs-on: ubuntu-latest
-        name: Deploy Backend
-        steps:
-            - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v3
-              with:
-                  version: 9
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  cache: "pnpm"
+  deploy-backend:
+    runs-on: ubuntu-latest
+    name: Deploy Backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
 
-            - name: Install dependencies
-              run: pnpm install
+      - name: Install dependencies
+        run: pnpm install
 
-            - name: Deploy Backend
-              uses: cloudflare/wrangler-action@v3
-              with:
-                  apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-                  accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-                  workingDirectory: apps/backend
-                  command: deploy
-                  secrets: |
-                      DATABASE_URL
-                      JWT_SECRET
-                      GOOGLE_CLIENT_ID
-                      GOOGLE_CLIENT_SECRET
-              env:
-                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-                  JWT_SECRET: ${{ secrets.JWT_SECRET }}
-                  GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-                  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      - name: Build Shared Package
+        run: pnpm --filter @body-tracker/shared build
 
-    deploy-frontend:
-        runs-on: ubuntu-latest
-        name: Deploy Frontend
-        needs: deploy-backend
-        steps:
-            - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v3
-              with:
-                  version: 9
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  cache: "pnpm"
+      - name: Deploy Backend
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/backend
+          command: deploy
+          secrets: |
+            DATABASE_URL
+            JWT_SECRET
+            GOOGLE_CLIENT_ID
+            GOOGLE_CLIENT_SECRET
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
 
-            - name: Install dependencies
-              run: pnpm install
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend
+    needs: deploy-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
 
-            - name: Build Frontend
-              run: pnpm --filter frontend build
-              env:
-                  # Backend URL should be set in GitHub Secrets or hardcoded if known
-                  # Example: https://body-tracker-backend.<your-subdomain>.workers.dev
-                  VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+      - name: Install dependencies
+        run: pnpm install
 
-            - name: Deploy Frontend
-              uses: cloudflare/pages-action@v1
-              with:
-                  apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-                  accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-                  projectName: body-tracker
-                  directory: apps/frontend/dist
-                  gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Shared Package
+        run: pnpm --filter @body-tracker/shared build
+
+      - name: Build Frontend
+        run: pnpm --filter frontend build
+        env:
+          # Backend URL should be set in GitHub Secrets or hardcoded if known
+          # Example: https://body-tracker-backend.<your-subdomain>.workers.dev
+          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+
+      - name: Deploy Frontend
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: body-tracker
+          directory: apps/frontend/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
