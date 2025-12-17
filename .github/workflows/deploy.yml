@@ -73,6 +73,7 @@ jobs:
           # Backend URL should be set in GitHub Secrets or hardcoded if known
           # Example: https://body-tracker-backend.<your-subdomain>.workers.dev
           VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
       - name: Deploy Frontend
         uses: cloudflare/pages-action@v1
