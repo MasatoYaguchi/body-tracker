@@ -1,23 +1,55 @@
-// apps/backend/src/server.ts (認証機能統合版)
 import { type Stats, validateBodyRecord } from '@body-tracker/shared';
-import { serve } from '@hono/node-server';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { validator } from 'hono/validator';
-import { db } from './db/connection';
+import { createDb } from './db/connection';
 import { bodyRecords } from './db/schema';
 import { authMiddleware, getAuthenticatedUser } from './middleware/auth';
 import authRoutes from './routes/auth';
+import rankingRoutes from './routes/ranking';
+import type { Bindings, Variables } from './types';
 
 // サーバーの初期化
-const app = new Hono();
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+/**
+ * DB接続ミドルウェア
+ *
+ * - Cloudflare Workersでは環境変数は `c.env` から取得する
+ * - リクエストごとにDB接続を初期化し、コンテキスト (`c.var`) に注入する (Dependency Injection)
+ * - これにより、ルートハンドラ内で `c.var.db` としてDBにアクセスできる
+ */
+app.use('*', async (c, next) => {
+  const db = createDb(c.env.DATABASE_URL);
+  c.set('db', db);
+  await next();
+});
 
 // CORS設定（認証対応）
 app.use(
   '/*',
   cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'],
+    origin: (origin) => {
+      if (!origin) return null;
+      // Allow localhost and 127.0.0.1 for local development
+      if (
+        origin.startsWith('http://localhost:3000') ||
+        origin.startsWith('http://127.0.0.1:3000') ||
+        origin.startsWith('http://localhost:3001')
+      ) {
+        return origin;
+      }
+      // Allow production Cloudflare Pages
+      if (origin === 'https://body-tracker.pages.dev') {
+        return origin;
+      }
+      // Allow preview deployments: https://<hash>.body-tracker.pages.dev
+      if (/^https:\/\/[a-z0-9-]+\.body-tracker\.pages\.dev$/.test(origin)) {
+        return origin;
+      }
+      return null;
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -26,6 +58,9 @@ app.use(
 
 // 🔐 認証ルート（認証不要）
 app.route('/api/auth', authRoutes);
+
+// 🏆 ランキングルート
+app.route('/api/ranking', rankingRoutes);
 
 // バリデーションスキーマ
 const bodyRecordValidator = validator('json', (value, c) => {
@@ -43,6 +78,9 @@ const bodyRecordValidator = validator('json', (value, c) => {
 /**
  * 全記録取得（認証必須）
  * GET /api/records
+ *
+ * - 認証済みユーザーID (`userPayload.userId`) を使用してデータをフィルタリング
+ * - 他のユーザーのデータが見えないようにする (マルチテナントの基本)
  */
 app.get('/api/records', authMiddleware, async (c) => {
   try {
@@ -51,7 +89,7 @@ app.get('/api/records', authMiddleware, async (c) => {
     console.log('📊 記録取得リクエスト - ユーザー:', userPayload.email);
 
     // ユーザーに関連する記録のみ取得
-    const userRecords = await db
+    const userRecords = await c.var.db
       .select()
       .from(bodyRecords)
       .where(eq(bodyRecords.userId, userPayload.userId))
@@ -77,6 +115,9 @@ app.get('/api/records', authMiddleware, async (c) => {
 /**
  * 記録追加（認証必須）
  * POST /api/records
+ *
+ * - 新しいレコードを作成する際、認証済みユーザーIDを紐付ける
+ * - バリデーション済みのデータを使用する
  */
 app.post('/api/records', authMiddleware, bodyRecordValidator, async (c) => {
   try {
@@ -85,13 +126,13 @@ app.post('/api/records', authMiddleware, bodyRecordValidator, async (c) => {
 
     console.log('➕ 記録追加リクエスト - ユーザー:', userPayload.email);
 
-    const [newRecord] = await db
+    const [newRecord] = await c.var.db
       .insert(bodyRecords)
       .values({
         userId: userPayload.userId, // 認証されたユーザーのID
         weight: weight.toString(),
         bodyFatPercentage: bodyFatPercentage.toString(),
-        recordedDate: date,
+        recordedDate: new Date(date),
       })
       .returning();
 
@@ -115,6 +156,9 @@ app.post('/api/records', authMiddleware, bodyRecordValidator, async (c) => {
 /**
  * 記録更新（認証必須）
  * PUT /api/records/:id
+ *
+ * - 更新対象のレコードが、認証済みユーザーのものであるかを確認する (`and(eq(...), eq(...))`)
+ * - IDだけで更新すると、他人のデータを書き換えてしまう脆弱性 (IDOR) になるため注意
  */
 app.put('/api/records/:id', authMiddleware, bodyRecordValidator, async (c) => {
   try {
@@ -125,14 +169,14 @@ app.put('/api/records/:id', authMiddleware, bodyRecordValidator, async (c) => {
     console.log('✏️ 記録更新リクエスト - ユーザー:', userPayload.email, 'レコードID:', id);
 
     // ユーザーの記録のみ更新可能
-    const [updatedRecord] = await db
+    const [updatedRecord] = await c.var.db
       .update(bodyRecords)
       .set({
         weight: weight.toString(),
         bodyFatPercentage: bodyFatPercentage.toString(),
-        recordedDate: date,
+        recordedDate: new Date(date),
       })
-      .where(eq(bodyRecords.id, id) && eq(bodyRecords.userId, userPayload.userId))
+      .where(and(eq(bodyRecords.id, id), eq(bodyRecords.userId, userPayload.userId)))
       .returning();
 
     if (!updatedRecord) {
@@ -159,6 +203,8 @@ app.put('/api/records/:id', authMiddleware, bodyRecordValidator, async (c) => {
 /**
  * 記録削除（認証必須）
  * DELETE /api/records/:id
+ *
+ * - 削除対象のレコードが、認証済みユーザーのものであるかを確認する
  */
 app.delete('/api/records/:id', authMiddleware, async (c) => {
   try {
@@ -168,9 +214,9 @@ app.delete('/api/records/:id', authMiddleware, async (c) => {
     console.log('🗑️ 記録削除リクエスト - ユーザー:', userPayload.email, 'レコードID:', id);
 
     // ユーザーの記録のみ削除可能
-    const [deletedRecord] = await db
+    const [deletedRecord] = await c.var.db
       .delete(bodyRecords)
-      .where(eq(bodyRecords.id, id) && eq(bodyRecords.userId, userPayload.userId))
+      .where(and(eq(bodyRecords.id, id), eq(bodyRecords.userId, userPayload.userId)))
       .returning();
 
     if (!deletedRecord) {
@@ -189,6 +235,8 @@ app.delete('/api/records/:id', authMiddleware, async (c) => {
 /**
  * 統計情報取得（認証必須）
  * GET /api/stats
+ *
+ * - ユーザーごとのデータを集計して返す
  */
 app.get('/api/stats', authMiddleware, async (c) => {
   try {
@@ -197,7 +245,7 @@ app.get('/api/stats', authMiddleware, async (c) => {
     console.log('📈 統計情報取得リクエスト - ユーザー:', userPayload.email);
 
     // ユーザーの記録のみ集計
-    const allRecords = await db
+    const allRecords = await c.var.db
       .select()
       .from(bodyRecords)
       .where(eq(bodyRecords.userId, userPayload.userId))
@@ -251,30 +299,4 @@ app.get('/', (c) => {
   });
 });
 
-// サーバー起動
-const port = 8000;
-
-console.log(`🚀 Server running at http://localhost:${port}`);
-console.log('🔐 Authentication endpoints:');
-console.log('  POST   /api/auth/google - Google OAuth認証');
-console.log('  POST   /api/auth/google/code - Google OAuth Code+PKCE 交換');
-console.log('  GET    /api/auth/me - ユーザー情報取得');
-console.log('  POST   /api/auth/logout - ログアウト');
-console.log('  GET    /api/auth/status - 認証ステータス確認');
-console.log('');
-console.log('📊 Protected API endpoints (認証必須):');
-console.log('  GET    /api/records - 全記録取得');
-console.log('  POST   /api/records - 記録追加');
-console.log('  PUT    /api/records/:id - 記録更新');
-console.log('  DELETE /api/records/:id - 記録削除');
-console.log('  GET    /api/stats - 統計情報取得');
-console.log('');
-console.log('🔑 Required environment variables:');
-console.log('  - DATABASE_URL (Neon PostgreSQL)');
-console.log('  - JWT_SECRET (JWT signing key)');
-console.log('  - GOOGLE_CLIENT_ID (Google OAuth)');
-
-serve({
-  fetch: app.fetch,
-  port: port,
-});
+export default app;

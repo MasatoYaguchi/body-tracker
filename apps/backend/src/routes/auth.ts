@@ -1,4 +1,5 @@
 // apps/backend/src/routes/auth.ts
+import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { validator } from 'hono/validator';
 import {
@@ -7,15 +8,16 @@ import {
   generateJWT,
   verifyGoogleToken,
 } from '../auth/google';
+import * as schema from '../db/schema';
 import { authMiddleware, getAuthenticatedUser } from '../middleware/auth';
+import type { Bindings, Variables } from '../types';
 
 // 認証ルーター作成
-const auth = new Hono();
+const auth = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 /**
  * Google認証リクエストのバリデーター
  *
- * 学習ポイント:
  * - リクエストボディの型安全性を確保
  * - 必須フィールドの存在チェック
  * - 早期エラーレスポンス
@@ -36,10 +38,9 @@ const googleAuthValidator = validator('json', (value, c) => {
  * Google OAuth認証エンドポイント
  * POST /api/auth/google
  *
- * 学習ポイント:
- * - Google IDトークンの検証
- * - ユーザー作成/取得のビジネスロジック
- * - JWT生成とレスポンス
+ * - Google IDトークンの検証 (c.envからクライアントIDを取得)
+ * - ユーザー作成/取得のビジネスロジック (c.var.dbを注入)
+ * - JWT生成とレスポンス (c.envからシークレットを取得)
  */
 auth.post('/google', googleAuthValidator, async (c) => {
   try {
@@ -48,7 +49,7 @@ auth.post('/google', googleAuthValidator, async (c) => {
     const { credential } = c.req.valid('json');
 
     // Step 1: Google認証トークンを検証
-    const googlePayload = await verifyGoogleToken(credential);
+    const googlePayload = await verifyGoogleToken(credential, c.env.GOOGLE_CLIENT_ID);
 
     // Step 2: メール認証済みチェック
     if (!googlePayload.email_verified) {
@@ -57,10 +58,10 @@ auth.post('/google', googleAuthValidator, async (c) => {
     }
 
     // Step 3: ユーザー作成または取得
-    const user = await findOrCreateUser(googlePayload);
+    const user = await findOrCreateUser(googlePayload, c.var.db);
 
     // Step 4: JWTトークン生成
-    const token = generateJWT(user);
+    const token = await generateJWT(user, c.env.JWT_SECRET);
 
     console.log('✅ Google認証完了:', user.email);
 
@@ -110,13 +111,17 @@ auth.post(
   async (c) => {
     try {
       const { code, codeVerifier, redirectUri } = c.req.valid('json');
-      const { idToken } = await exchangeCodeForIdToken({ code, codeVerifier, redirectUri });
-      const googlePayload = await verifyGoogleToken(idToken);
+      const { idToken } = await exchangeCodeForIdToken(
+        { code, codeVerifier, redirectUri },
+        c.env.GOOGLE_CLIENT_ID,
+        c.env.GOOGLE_CLIENT_SECRET,
+      );
+      const googlePayload = await verifyGoogleToken(idToken, c.env.GOOGLE_CLIENT_ID);
       if (!googlePayload.email_verified) {
         return c.json({ error: 'Email not verified by Google' }, 400);
       }
-      const user = await findOrCreateUser(googlePayload);
-      const token = generateJWT(user);
+      const user = await findOrCreateUser(googlePayload, c.var.db);
+      const token = await generateJWT(user, c.env.JWT_SECRET);
       return c.json({
         user: {
           id: user.id,
@@ -138,7 +143,6 @@ auth.post(
  * ユーザー情報取得エンドポイント
  * GET /api/auth/me
  *
- * 学習ポイント:
  * - 認証ミドルウェアによる保護
  * - JWTからユーザー情報を取得
  * - 認証済みユーザーの情報レスポンス
@@ -150,12 +154,12 @@ auth.get('/me', authMiddleware, async (c) => {
     // 認証ミドルウェアで設定されたユーザー情報を取得
     const userPayload = getAuthenticatedUser(c);
 
-    // DBから最新のユーザー情報を取得（displayNameなどが更新されている可能性があるため）
-    const { db } = await import('../db/connection');
-    const { users } = await import('../db/schema');
-    const { eq } = await import('drizzle-orm');
-
-    const [user] = await db.select().from(users).where(eq(users.id, userPayload.userId)).limit(1);
+    // DBから最新のユーザー情報を取得
+    const [user] = await c.var.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userPayload.userId))
+      .limit(1);
 
     if (!user) {
       return c.json({ error: 'ユーザーが見つかりません' }, 404);
@@ -167,9 +171,6 @@ auth.get('/me', authMiddleware, async (c) => {
       id: user.id,
       email: user.email,
       name: user.displayName,
-      // googleIdはDBに保存していない場合はJWTから取得、あるいはDBに追加が必要だが
-      // 現状のスキーマにはgoogleIdカラムがないため、JWTの値を返すか、省略する
-      // ここではJWTの値を返すことにする（userPayload.googleId）
       googleId: userPayload.googleId,
     });
   } catch (error) {
@@ -182,7 +183,6 @@ auth.get('/me', authMiddleware, async (c) => {
  * ログアウトエンドポイント
  * POST /api/auth/logout
  *
- * 学習ポイント:
  * - JWTはステートレスなため、サーバー側で無効化できない
  * - クライアント側でトークン削除が主な処理
  * - 将来的にはトークンブラックリスト機能を実装予定
@@ -195,8 +195,6 @@ auth.post('/logout', authMiddleware, async (c) => {
 
     console.log('✅ ログアウト処理完了:', userPayload.email);
 
-    // 現在はクライアント側でトークン削除
-    // 将来的にはトークンブラックリスト機能を実装
     return c.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('❌ Logout error:', error);
@@ -208,7 +206,6 @@ auth.post('/logout', authMiddleware, async (c) => {
  * 認証ステータス確認エンドポイント（デバッグ用）
  * GET /api/auth/status
  *
- * 学習ポイント:
  * - 開発時のデバッグに使用
  * - 認証状態の確認
  * - 本番環境では削除を検討
@@ -252,9 +249,15 @@ auth.put(
     if (!value.displayName || typeof value.displayName !== 'string') {
       return c.json({ error: '表示名は必須です' }, 400);
     }
-    if (value.displayName.length > 50) {
-      return c.json({ error: '表示名は50文字以内で入力してください' }, 400);
+    const trimmedName = value.displayName.trim();
+    if (trimmedName.length === 0) {
+      return c.json({ error: 'Display name cannot be empty' }, 400);
     }
+    if (trimmedName.length > 50) {
+      return c.json({ error: 'Display name must be 50 characters or less' }, 400);
+    }
+    // トリム済みの値を返す
+    value.displayName = trimmedName;
     return value;
   }),
   async (c) => {
@@ -262,19 +265,15 @@ auth.put(
       const userPayload = getAuthenticatedUser(c);
       const { displayName } = c.req.valid('json');
 
-      const { db } = await import('../db/connection');
-      const { users } = await import('../db/schema');
-      const { eq } = await import('drizzle-orm');
-
       console.log('👤 プロフィール更新リクエスト:', userPayload.email, displayName);
 
-      const [updatedUser] = await db
-        .update(users)
+      const [updatedUser] = await c.var.db
+        .update(schema.users)
         .set({
           displayName: displayName,
           updatedAt: new Date(),
         })
-        .where(eq(users.id, userPayload.userId))
+        .where(eq(schema.users.id, userPayload.userId))
         .returning();
 
       if (!updatedUser) {

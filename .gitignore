@@ -18,6 +18,7 @@ build/
 .nuxt/
 .output/
 .vite/
+.wrangler/
 
 # Environment variables
 .env

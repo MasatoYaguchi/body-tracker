@@ -1,9 +1,8 @@
+import { eq } from 'drizzle-orm';
 // apps/backend/src/auth/google.ts
-import { OAuth2Client } from 'google-auth-library';
-import jwt, { type JwtPayload } from 'jsonwebtoken';
-
-// Google OAuth2クライアントの初期化 (IDトークン検証用: client secret 不要)
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { sign, verify } from 'hono/jwt';
+import * as schema from '../db/schema';
 
 // Google認証から取得される情報の型定義
 export interface GoogleTokenPayload {
@@ -12,6 +11,34 @@ export interface GoogleTokenPayload {
   name: string; // 表示名
   picture?: string; // プロフィール画像URL
   email_verified: boolean; // メール認証済みかどうか
+}
+
+interface GoogleTokenInfo {
+  aud: string;
+  email: string;
+  email_verified: string | boolean;
+  name: string;
+  picture?: string;
+  sub: string;
+  [key: string]: unknown;
+}
+
+interface GoogleTokenResponse {
+  id_token: string;
+  refresh_token?: string;
+  access_token: string;
+  expires_in: number;
+  scope: string;
+  token_type: string;
+}
+
+export interface JWTPayload {
+  userId: string;
+  email: string;
+  googleId: string;
+  iss: string;
+  aud: string;
+  exp: number;
 }
 
 // アプリ内で使用するユーザー情報の型定義
@@ -26,25 +53,25 @@ export interface AuthUser {
 
 /**
  * Google認証トークンの検証
- *
- * 学習ポイント:
- * - Google IDトークンはJWT形式で署名されている
- * - Google公開鍵で署名を検証することで改ざんを防ぐ
- * - 有効期限や発行者も自動で検証される
  */
-export async function verifyGoogleToken(credential: string): Promise<GoogleTokenPayload> {
+export async function verifyGoogleToken(
+  credential: string,
+  clientId: string,
+): Promise<GoogleTokenPayload> {
   try {
     console.log('🔍 Google認証トークンを検証中...');
 
-    // Google OAuth2Clientを使用してトークン検証
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID, // このアプリ宛てのトークンかチェック
-    });
+    // Googleのtokeninfoエンドポイントを使用して検証
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
 
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new Error('Invalid Google token payload');
+    if (!response.ok) {
+      throw new Error('Failed to verify token with Google');
+    }
+
+    const payload = (await response.json()) as GoogleTokenInfo;
+
+    if (payload.aud !== clientId) {
+      throw new Error('Token audience mismatch');
     }
 
     console.log('✅ Google認証トークンの検証成功:', {
@@ -58,7 +85,7 @@ export async function verifyGoogleToken(credential: string): Promise<GoogleToken
       email: payload.email ?? 'no email',
       name: payload.name ?? 'no name',
       picture: payload.picture,
-      email_verified: !!payload.email_verified,
+      email_verified: payload.email_verified === 'true' || payload.email_verified === true,
     };
   } catch (error) {
     console.error('❌ Google token verification failed:', error);
@@ -67,45 +94,68 @@ export async function verifyGoogleToken(credential: string): Promise<GoogleToken
 }
 
 /**
- * Authorization Code + PKCE で受け取った code を Google Token Endpoint で交換し id_token を取得する
- *  - フロントエンドから code, codeVerifier, redirectUri を受け取り使用
- *  - ここでは refresh_token も返却され得るが現状は使用しない（将来のリフレッシュ拡張用）
+ * Authorization Code + PKCE で受け取った code を Google Token Endpoint で交換し
+ * id_token を取得する
  */
-export async function exchangeCodeForIdToken(params: {
-  code: string;
-  codeVerifier: string;
-  redirectUri: string;
-}): Promise<{ idToken: string; refreshToken?: string }> {
+export async function exchangeCodeForIdToken(
+  params: {
+    code: string;
+    codeVerifier: string;
+    redirectUri: string;
+  },
+  clientId: string,
+  clientSecret: string,
+): Promise<{ idToken: string; refreshToken?: string }> {
   const { code, codeVerifier, redirectUri } = params;
 
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  if (!clientId || !clientSecret) {
     throw new Error('Google OAuth client credentials not set');
   }
 
-  // redirectUri の簡易バリデーション（本番導入時は許可リスト化）
-  if (!/^http:\/\/localhost:3000\/(gsi-test\.html|auth\/callback)$/.test(redirectUri)) {
+  // redirectUri の簡易バリデーション
+  const allowedOrigins = [
+    /^http:\/\/localhost:3000\/(gsi-test\.html|auth\/callback)$/,
+    /^https:\/\/body-tracker\.pages\.dev\/auth\/callback$/,
+    /^https:\/\/[a-z0-9-]+\.body-tracker\.pages\.dev\/auth\/callback$/, // Preview URLs
+  ];
+
+  if (!allowedOrigins.some((pattern) => pattern.test(redirectUri))) {
     throw new Error('Invalid redirectUri');
   }
 
   try {
-    const oauthClient = new OAuth2Client(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri,
-    );
-
-    const { tokens } = await oauthClient.getToken({
+    const tokenEndpoint = 'https://oauth2.googleapis.com/token';
+    const body = new URLSearchParams({
       code,
-      codeVerifier,
+      client_id: clientId,
+      client_secret: clientSecret,
       redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+      code_verifier: codeVerifier,
     });
 
-    const idToken = tokens.id_token ?? undefined;
+    const response = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Google Token Endpoint Error:', errorText);
+      throw new Error(`Token exchange failed: ${response.statusText}`);
+    }
+
+    const tokens = (await response.json()) as GoogleTokenResponse;
+
+    const idToken = tokens.id_token;
     if (!idToken) {
       throw new Error('No id_token returned from Google');
     }
 
-    return { idToken, refreshToken: tokens.refresh_token ?? undefined };
+    return { idToken, refreshToken: tokens.refresh_token };
   } catch (e) {
     console.error('❌ Code exchange failed', e);
     throw new Error('Code exchange failed');
@@ -114,26 +164,19 @@ export async function exchangeCodeForIdToken(params: {
 
 /**
  * ユーザー作成または取得
- *
- * 学習ポイント:
- * - 既存ユーザーかどうかをメールアドレスで検索
- * - 新規ユーザーの場合はデータベースに作成
- * - Drizzle ORMでの型安全なデータベース操作
  */
-export async function findOrCreateUser(googlePayload: GoogleTokenPayload): Promise<AuthUser> {
-  // データベース接続とスキーマをインポート（後で追加）
-  const { db } = await import('../db/connection');
-  const { users } = await import('../db/schema');
-  const { eq } = await import('drizzle-orm');
-
+export async function findOrCreateUser(
+  googlePayload: GoogleTokenPayload,
+  db: NeonHttpDatabase<typeof schema>,
+): Promise<AuthUser> {
   try {
     console.log('🔍 ユーザー検索中:', googlePayload.email);
 
     // Step 1: 既存ユーザーを検索（メールアドレスで）
     const existingUsers = await db
       .select()
-      .from(users)
-      .where(eq(users.email, googlePayload.email))
+      .from(schema.users)
+      .where(eq(schema.users.email, googlePayload.email))
       .limit(1);
 
     // Step 2: 既存ユーザーが見つかった場合
@@ -155,7 +198,7 @@ export async function findOrCreateUser(googlePayload: GoogleTokenPayload): Promi
     console.log('👤 新規ユーザーを作成中:', googlePayload.email);
 
     const [newUser] = await db
-      .insert(users)
+      .insert(schema.users)
       .values({
         // idは自動生成されるため省略
         username: `user_${Date.now()}`,
@@ -179,16 +222,11 @@ export async function findOrCreateUser(googlePayload: GoogleTokenPayload): Promi
     throw new Error('User search or creation failed');
   }
 }
+
 /**
  * JWT（JSON Web Token）生成
- *
- * 学習ポイント:
- * - JWTは署名付きトークンで改ざんを検出できる
- * - ペイロードには秘密情報を入れない（誰でも読める）
- * - 有効期限を設定してセキュリティを向上
  */
-export function generateJWT(user: AuthUser): string {
-  const jwtSecret = process.env.JWT_SECRET;
+export async function generateJWT(user: AuthUser, jwtSecret: string): Promise<string> {
   if (!jwtSecret) {
     throw new Error('JWT_SECRET environment variable is not set');
   }
@@ -200,17 +238,13 @@ export function generateJWT(user: AuthUser): string {
     userId: user.id,
     email: user.email,
     googleId: user.googleId,
-    // 注意: パスワードや機密情報は含めない
+    // 標準クレーム
+    iss: 'body-tracker',
+    aud: 'body-tracker-users',
+    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // 30日間有効
   };
 
-  // JWT署名オプション（型を明示的に指定）
-  const options: jwt.SignOptions = {
-    expiresIn: '30d', // 30日間有効
-    issuer: 'body-tracker', // 発行者
-    audience: 'body-tracker-users', // 対象者
-  };
-
-  const token = jwt.sign(payload, jwtSecret, options);
+  const token = await sign(payload, jwtSecret);
 
   console.log('✅ JWT生成完了');
   return token;
@@ -218,14 +252,8 @@ export function generateJWT(user: AuthUser): string {
 
 /**
  * JWT検証
- *
- * 学習ポイント:
- * - 署名検証で改ざんを検出
- * - 有効期限の自動チェック
- * - 発行者・対象者の検証
  */
-export function verifyJWT(token: string): string | JwtPayload {
-  const jwtSecret = process.env.JWT_SECRET;
+export async function verifyJWT(token: string, jwtSecret: string): Promise<JWTPayload> {
   if (!jwtSecret) {
     throw new Error('JWT_SECRET environment variable is not set');
   }
@@ -233,26 +261,12 @@ export function verifyJWT(token: string): string | JwtPayload {
   try {
     console.log('🔍 JWT検証中...');
 
-    // JWT検証オプション
-    const options = {
-      issuer: 'body-tracker',
-      audience: 'body-tracker-users',
-    };
+    const decoded = (await verify(token, jwtSecret)) as unknown as JWTPayload;
 
-    const decoded = jwt.verify(token, jwtSecret, options);
-
-    console.log('✅ JWT検証成功:', typeof decoded === 'string' ? decoded : decoded?.email);
+    console.log('✅ JWT検証成功:', decoded.email);
     return decoded;
   } catch (error) {
     console.error('❌ JWT verification failed:', error);
-
-    // エラーの種類に応じた詳細メッセージ
-    if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Token has expired');
-    }
-    if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid token');
-    }
     throw new Error('Token verification failed');
   }
 }

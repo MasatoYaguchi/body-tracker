@@ -109,8 +109,8 @@ pnpm dev
 
 # アクセス
 # フロントエンド: http://localhost:3000
-# バックエンドAPI: http://localhost:8000
-# Adminer: http://localhost:8080
+# バックエンドAPI: http://localhost:8787
+# データベース管理 (Adminer): http://localhost:8080
 ```
 
 ## 🛠️ 現在の機能

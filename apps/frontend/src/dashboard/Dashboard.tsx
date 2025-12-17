@@ -14,7 +14,7 @@ import { WeightChart } from './WeightChart';
 
 // ===== API関数（認証対応版） =====
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787/api';
 
 /**
  * 認証ヘッダー付きのfetch関数
