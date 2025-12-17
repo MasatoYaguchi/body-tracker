@@ -1,0 +1,1 @@
+ALTER TABLE "body_records" ADD COLUMN "deleted_at" timestamp with time zone;

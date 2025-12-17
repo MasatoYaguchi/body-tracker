@@ -2,8 +2,9 @@
 // 記録追加フォームコンポーネント
 
 import type { BodyRecord } from '@body-tracker/shared/dist/types';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { api } from './Dashboard';
+import { RecordForm, type RecordFormData } from './RecordForm';
 
 /**
  * QuickRecordFormコンポーネントのProps
@@ -25,53 +26,38 @@ export function QuickRecordForm({
   onRecordAdded,
   latestRecord,
 }: QuickRecordFormProps): React.ReactElement {
-  const [weight, setWeight] = useState(latestRecord?.weight.toString() || '');
-  const [bodyFat, setBodyFat] = useState(latestRecord?.bodyFatPercentage.toString() || '');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  /**
-   * フォーム送信処理
-   */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    const weightNum = Number.parseFloat(weight);
-    const bodyFatNum = Number.parseFloat(bodyFat);
+  // 初期値の設定
+  const initialValues = useMemo(
+    () => ({
+      weight: latestRecord?.weight,
+      bodyFatPercentage: latestRecord?.bodyFatPercentage,
+      date: new Date().toISOString().split('T')[0],
+    }),
+    [latestRecord],
+  );
 
-    if (Number.isNaN(weightNum) || Number.isNaN(bodyFatNum)) {
-      alert('有効な数値を入力してください');
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (data: RecordFormData) => {
+      setIsSubmitting(true);
+      try {
+        await api.addRecord({
+          weight: data.weight,
+          bodyFatPercentage: data.bodyFatPercentage,
+          date: data.date,
+        });
 
-    if (weightNum <= 0 || weightNum > 1000) {
-      alert('体重は0から1000の間で入力してください');
-      return;
-    }
-
-    if (bodyFatNum < 0 || bodyFatNum > 100) {
-      alert('体脂肪率は0から100の間で入力してください');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await api.addRecord({
-        weight: weightNum,
-        bodyFatPercentage: bodyFatNum,
-        date,
-      });
-
-      // 日付のみリセット（連続入力のため体重・体脂肪率は保持）
-      setDate(new Date().toISOString().split('T')[0]);
-
-      // データ再読み込み
-      onRecordAdded();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : '記録の追加に失敗しました');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        // データ再読み込み
+        onRecordAdded();
+      } catch (error) {
+        alert(error instanceof Error ? error.message : '記録の追加に失敗しました');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [onRecordAdded],
+  );
 
   return (
     <div className="card p-6">
@@ -93,70 +79,12 @@ export function QuickRecordForm({
         新しい記録を追加
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 日付入力 */}
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-            日付
-          </label>
-          <input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="form-input"
-            required
-          />
-        </div>
-        {/* 体重入力 */}
-        <div>
-          <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-2">
-            体重 (kg)
-          </label>
-          <input
-            id="weight"
-            type="number"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            step="0.1"
-            min="10"
-            max="200"
-            className="form-input"
-            placeholder="例: 65.5"
-            required
-          />
-        </div>
-        {/* 体脂肪率入力 */}
-        <div>
-          <label htmlFor="bodyFat" className="block text-sm font-medium text-gray-700 mb-2">
-            体脂肪率 (%)
-          </label>
-          <input
-            id="bodyFat"
-            type="number"
-            value={bodyFat}
-            onChange={(e) => setBodyFat(e.target.value)}
-            step="0.1"
-            min="1"
-            max="50"
-            className="form-input"
-            placeholder="例: 15.5"
-            required
-          />
-        </div>
-
-        {/* 送信ボタン */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-        >
-          {isSubmitting && (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-          )}
-          {isSubmitting ? '追加中...' : '記録を追加'}
-        </button>
-      </form>
+      <RecordForm
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        submitLabel="記録を追加"
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

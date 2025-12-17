@@ -28,6 +28,7 @@ export const bodyRecords = pgTable('body_records', {
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }),
   updatedAt: timestamp('updated_at', { withTimezone: true }),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
 });
 
 export type User = typeof users.$inferSelect;

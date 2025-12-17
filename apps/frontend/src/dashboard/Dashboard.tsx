@@ -5,10 +5,12 @@ import type { BodyRecord, Stats } from '@body-tracker/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { Modal } from '../ui/Modal';
 
 import { DashboardHeader } from './DashboardHeader';
 import { QuickRecordForm } from './QuickRecordForm';
 import { RecentRecords } from './RecentRecords';
+import { RecordForm, type RecordFormData } from './RecordForm';
 import { StatsCard } from './StatsCard';
 import { WeightChart } from './WeightChart';
 
@@ -55,6 +57,31 @@ export const api = {
     return res.json();
   },
 
+  async updateRecord(
+    id: string,
+    record: Omit<BodyRecord, 'id' | 'createdAt'>,
+  ): Promise<BodyRecord> {
+    const res = await authenticatedFetch(`${API_BASE}/records/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(record),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || '記録の更新に失敗しました');
+    }
+    return res.json();
+  },
+
+  async deleteRecord(id: string): Promise<void> {
+    const res = await authenticatedFetch(`${API_BASE}/records/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || '記録の削除に失敗しました');
+    }
+  },
+
   async getStats(): Promise<Stats> {
     const res = await authenticatedFetch(`${API_BASE}/stats`);
     if (!res.ok) throw new Error('統計情報の取得に失敗しました');
@@ -94,11 +121,14 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
     weightChange: null,
     bodyFatChange: null,
   });
-  // TODO:editingRecordが使われていないので、必要に応じて実装を追加
-  const [_editingRecord, setEditingRecord] = useState<BodyRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<BodyRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const latestRecord = records[0] ?? null;
+
   // ===== データ取得処理 =====
 
   /**
@@ -126,6 +156,46 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // ===== 更新処理 =====
+
+  const handleUpdateRecord = async (data: RecordFormData) => {
+    if (!editingRecord) return;
+
+    setIsUpdating(true);
+    try {
+      await api.updateRecord(editingRecord.id, {
+        weight: data.weight,
+        bodyFatPercentage: data.bodyFatPercentage,
+        date: data.date,
+      });
+
+      await loadData();
+      setEditingRecord(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '記録の更新に失敗しました');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // ===== 削除処理 =====
+
+  const handleDeleteRecord = async () => {
+    if (!editingRecord) return;
+    if (!confirm('本当にこの記録を削除しますか？')) return;
+
+    setIsDeleting(true);
+    try {
+      await api.deleteRecord(editingRecord.id);
+      await loadData();
+      setEditingRecord(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '記録の削除に失敗しました');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // ===== レンダリング制御 =====
   if (loading) {
@@ -173,6 +243,46 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
         onEdit={setEditingRecord}
         onRefresh={loadData}
       />
+
+      {/* 編集モーダル */}
+      <Modal
+        isOpen={!!editingRecord}
+        onClose={() => setEditingRecord(null)}
+        title="記録を編集"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={handleDeleteRecord}
+              disabled={isDeleting || isUpdating}
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-1 sm:text-sm disabled:opacity-50"
+            >
+              {isDeleting ? '削除中...' : '削除'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingRecord(null)}
+              disabled={isDeleting || isUpdating}
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-2 sm:text-sm"
+            >
+              キャンセル
+            </button>
+          </>
+        }
+      >
+        {editingRecord && (
+          <RecordForm
+            initialValues={{
+              weight: Number(editingRecord.weight),
+              bodyFatPercentage: Number(editingRecord.bodyFatPercentage),
+              date: editingRecord.date,
+            }}
+            onSubmit={handleUpdateRecord}
+            submitLabel="更新する"
+            isSubmitting={isUpdating}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
