@@ -33,12 +33,12 @@ export function Modal({
     >
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         {/* 背景オーバーレイ */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: Overlay is not keyboard interactive, Escape key is handled globally */}
         <div
           ref={overlayRef}
           className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
           aria-hidden="true"
           onClick={onClose}
-          onKeyDown={(e) => e.key === 'Enter' && onClose()}
         />
 
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">

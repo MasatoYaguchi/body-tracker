@@ -30,6 +30,10 @@ export const RecordForm = memo(function RecordForm({
       if (initialValues.weight) setWeight(initialValues.weight.toString());
       if (initialValues.bodyFatPercentage) setBodyFat(initialValues.bodyFatPercentage.toString());
       if (initialValues.date) setDate(initialValues.date.split('T')[0]);
+    } else {
+      setWeight('');
+      setBodyFat('');
+      setDate(new Date().toISOString().split('T')[0]);
     }
   }, [initialValues]);
 
@@ -45,12 +49,12 @@ export const RecordForm = memo(function RecordForm({
     }
 
     if (weightNum < WEIGHT_MIN || weightNum > WEIGHT_MAX) {
-      alert(`体重は${WEIGHT_MIN}から${WEIGHT_MAX}の間で入力してください`);
+      alert(`体重は${WEIGHT_MIN}kgから${WEIGHT_MAX}kgの間で入力してください`);
       return;
     }
 
     if (bodyFatNum < BODY_FAT_MIN || bodyFatNum > BODY_FAT_MAX) {
-      alert(`体脂肪率は${BODY_FAT_MIN}から${BODY_FAT_MAX}の間で入力してください`);
+      alert(`体脂肪率は${BODY_FAT_MIN}%から${BODY_FAT_MAX}%の間で入力してください`);
       return;
     }
 
@@ -75,6 +79,7 @@ export const RecordForm = memo(function RecordForm({
           onChange={(e) => setDate(e.target.value)}
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
           required
+          max={new Date().toISOString().split('T')[0]}
         />
       </div>
 
@@ -93,6 +98,8 @@ export const RecordForm = memo(function RecordForm({
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
             placeholder="60.0"
             required
+            min={WEIGHT_MIN}
+            max={WEIGHT_MAX}
           />
         </div>
 
@@ -110,6 +117,8 @@ export const RecordForm = memo(function RecordForm({
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
             placeholder="20.0"
             required
+            min={BODY_FAT_MIN}
+            max={BODY_FAT_MAX}
           />
         </div>
       </div>

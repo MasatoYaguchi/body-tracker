@@ -35,7 +35,7 @@ export function QuickRecordForm({
       bodyFatPercentage: latestRecord?.bodyFatPercentage,
       date: new Date().toISOString().split('T')[0],
     }),
-    [latestRecord],
+    [latestRecord?.weight, latestRecord?.bodyFatPercentage],
   );
 
   const handleSubmit = useCallback(
