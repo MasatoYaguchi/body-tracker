@@ -42,7 +42,7 @@ function AppContent(): React.ReactElement {
           </main>
           {/* ユーザー名登録モーダル */}
           <UserNameRegistrationModal
-            isOpen={shouldShowProfileModal}
+            isOpen={showNameRegistration}
             onClose={() => setIsProfileModalOpen(false)}
           />
         </div>,
