@@ -1,6 +1,4 @@
-import { useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useModal } from '../hooks/useModal';
+import { useEffect, useRef } from 'react';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -16,52 +14,65 @@ export function Modal({
   title,
   children,
   footer,
-}: ModalProps): React.ReactElement | null {
-  const overlayRef = useRef<HTMLDivElement>(null);
+}: ModalProps): React.ReactElement {
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
-  useModal(isOpen, onClose);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
 
-  if (!isOpen) return null;
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+        document.body.style.overflow = 'hidden';
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+        document.body.style.overflow = 'unset';
+      }
+    }
+  }, [isOpen]);
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto"
-      aria-labelledby="modal-title"
-      // biome-ignore lint/a11y/useSemanticElements: Modal implementation using div
-      role="dialog"
-      aria-modal="true"
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleCancel = (e: React.SyntheticEvent<HTMLDialogElement, Event>) => {
+    e.preventDefault();
+    onClose();
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    if (e.target === dialogRef.current) {
+      onClose();
+    }
+  };
+
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Dialog handles keyboard interaction natively
+    <dialog
+      ref={dialogRef}
+      className="backdrop:bg-gray-500/75 rounded-lg bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-lg p-0"
+      onCancel={handleCancel}
+      onClick={handleBackdropClick}
     >
-      <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        {/* 背景オーバーレイ */}
-        <div
-          ref={overlayRef}
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          aria-hidden="true"
-          onClick={onClose}
-          onKeyDown={(e) => e.key === 'Enter' && onClose()}
-        />
-
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
-          &#8203;
-        </span>
-
-        <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-          {title && (
-            <div className="mb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                {title}
-              </h3>
-            </div>
-          )}
-          <div className="mt-2">{children}</div>
-          {footer && (
-            <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-              {footer}
-            </div>
-          )}
-        </div>
+      <div className="px-4 pt-5 pb-4 sm:p-6">
+        {title && (
+          <div className="mb-4">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">{title}</h3>
+          </div>
+        )}
+        <div className="mt-2">{children}</div>
+        {footer && (
+          <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+            {footer}
+          </div>
+        )}
       </div>
-    </div>,
-    document.body,
+    </dialog>
   );
 }

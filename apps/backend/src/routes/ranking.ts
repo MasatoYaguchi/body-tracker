@@ -1,16 +1,10 @@
-import { desc, eq, gte } from 'drizzle-orm';
+import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { bodyRecords, users } from '../db/schema';
+import { bodyRecords, competitions, users } from '../db/schema';
 import { authMiddleware } from '../middleware/auth';
 import type { Bindings, Variables } from '../types';
 
 const ranking = new Hono<{ Bindings: Bindings; Variables: Variables }>();
-
-// コンペティション設定（将来的にはDBで管理することを想定）
-const COMPETITION_CONFIG = {
-  name: '2025年ボディメイクチャレンジ',
-  startDate: new Date('2025-01-01'), // 2025年開始
-};
 
 /**
  * ランキングデータ取得エンドポイント
@@ -20,6 +14,15 @@ ranking.get('/', authMiddleware, async (c) => {
   const db = c.var.db;
 
   try {
+    // アクティブなコンペティションを取得
+    const activeCompetition = await db.query.competitions.findFirst({
+      where: eq(competitions.isActive, true),
+    });
+
+    if (!activeCompetition) {
+      return c.json({ error: '開催中のランキングはありません' }, 404);
+    }
+
     // 1. 期間内の全記録を取得 (ユーザー情報も結合)
     // 日付の降順で取得することで、配列の先頭が「最新」、後方が「過去」となるようにする
     const records = await db
@@ -33,7 +36,13 @@ ranking.get('/', authMiddleware, async (c) => {
       })
       .from(bodyRecords)
       .innerJoin(users, eq(bodyRecords.userId, users.id))
-      .where(gte(bodyRecords.recordedDate, COMPETITION_CONFIG.startDate))
+      .where(
+        and(
+          gte(bodyRecords.recordedDate, activeCompetition.startDate),
+          lte(bodyRecords.recordedDate, activeCompetition.endDate),
+          eq(users.isParticipatingRanking, true),
+        ),
+      )
       .orderBy(desc(bodyRecords.recordedDate));
 
     // 2. ユーザーごとに集計
@@ -108,9 +117,9 @@ ranking.get('/', authMiddleware, async (c) => {
       }));
 
     return c.json({
-      competitionName: COMPETITION_CONFIG.name,
-      startDate: COMPETITION_CONFIG.startDate.toISOString().split('T')[0],
-      endDate: null,
+      competitionName: activeCompetition.name,
+      startDate: activeCompetition.startDate.toISOString().split('T')[0],
+      endDate: activeCompetition.endDate.toISOString().split('T')[0],
       rankings,
     });
   } catch (error) {

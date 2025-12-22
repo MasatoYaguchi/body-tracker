@@ -14,6 +14,8 @@ export interface User {
   name?: string;
   /** プロフィール画像URL（オプション） */
   picture?: string;
+  /** ランキング参加フラグ */
+  isParticipatingRanking?: boolean;
 }
 
 /**
