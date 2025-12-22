@@ -256,6 +256,14 @@ auth.put(
     if (trimmedName.length > 50) {
       return c.json({ error: 'Display name must be 50 characters or less' }, 400);
     }
+
+    if (
+      value.isParticipatingRanking !== undefined &&
+      typeof value.isParticipatingRanking !== 'boolean'
+    ) {
+      return c.json({ error: 'isParticipatingRanking must be a boolean' }, 400);
+    }
+
     // トリム済みの値を返す
     value.displayName = trimmedName;
     return value;
@@ -263,16 +271,28 @@ auth.put(
   async (c) => {
     try {
       const userPayload = getAuthenticatedUser(c);
-      const { displayName } = c.req.valid('json');
+      const { displayName, isParticipatingRanking } = c.req.valid('json');
 
-      console.log('👤 プロフィール更新リクエスト:', userPayload.email, displayName);
+      console.log(
+        '👤 プロフィール更新リクエスト:',
+        userPayload.email,
+        displayName,
+        isParticipatingRanking,
+      );
+
+      const updateData: { displayName: string; updatedAt: Date; isParticipatingRanking?: boolean } =
+        {
+          displayName: displayName,
+          updatedAt: new Date(),
+        };
+
+      if (isParticipatingRanking !== undefined) {
+        updateData.isParticipatingRanking = isParticipatingRanking;
+      }
 
       const [updatedUser] = await c.var.db
         .update(schema.users)
-        .set({
-          displayName: displayName,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(schema.users.id, userPayload.userId))
         .returning();
 
@@ -286,6 +306,7 @@ auth.put(
         id: updatedUser.id,
         email: updatedUser.email,
         name: updatedUser.displayName,
+        isParticipatingRanking: updatedUser.isParticipatingRanking,
       });
     } catch (error) {
       console.error('❌ Profile update error:', error);

@@ -218,9 +218,14 @@ class authApiClient {
    *
    * @param token - JWTトークン
    * @param displayName - 新しい表示名
+   * @param isParticipatingRanking - ランキング参加フラグ
    * @returns Promise<User> 更新後のユーザー情報
    */
-  async updateProfile(token: string, displayName: string): Promise<User> {
+  async updateProfile(
+    token: string,
+    displayName: string,
+    isParticipatingRanking?: boolean,
+  ): Promise<User> {
     console.log('👤 プロフィール更新API開始');
 
     try {
@@ -230,7 +235,7 @@ class authApiClient {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ displayName }),
+        body: JSON.stringify({ displayName, isParticipatingRanking }),
       });
 
       if (!response.ok) {

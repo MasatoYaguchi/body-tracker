@@ -162,6 +162,16 @@ export function Dashboard({ onError }: DashboardProps): React.ReactElement {
   const handleUpdateRecord = async (data: RecordFormData) => {
     if (!editingRecord) return;
 
+    // 変更がない場合は更新せずに閉じる
+    if (
+      data.weight === editingRecord.weight &&
+      data.bodyFatPercentage === editingRecord.bodyFatPercentage &&
+      data.date === editingRecord.date
+    ) {
+      setEditingRecord(null);
+      return;
+    }
+
     setIsUpdating(true);
     try {
       await api.updateRecord(editingRecord.id, {
