@@ -1,5 +1,12 @@
 # Body Tracker - AI Coding Agent Instructions
 
+## 🚨 CRITICAL RULES (DO NOT IGNORE)
+1. **NO UNAUTHORIZED DB MIGRATIONS**: 
+   - **NEVER** execute `drizzle-kit migrate`, `drizzle-kit push`, or any schema modification commands without explicit user permission.
+   - This applies to **ALL** environments. Migrations on deployed databases carry high risk of data loss or downtime.
+   - The project currently uses a **single Neon database instance** for both production and development, making this doubly critical.
+   - Always propose schema changes first, explain the impact (e.g., locking, data loss), and ask for confirmation.
+
 ## Architecture Overview
 
 This is a **pnpm workspace monorepo** body weight/fat tracking app with **React 19 + Hono + PostgreSQL + Drizzle ORM**. The project emphasizes learning modern React 19 features while building a practical application.
