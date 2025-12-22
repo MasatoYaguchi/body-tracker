@@ -116,5 +116,5 @@
   "explorer.confirmDragAndDrop": false,
   "workbench.editor.enablePreview": false,
   "breadcrumbs.enabled": true,
-  "cSpell.words": ["PKCE"]
+  "cSpell.words": ["Fitbit", "PKCE"]
 }
