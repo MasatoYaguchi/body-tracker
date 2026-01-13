@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { config } from 'dotenv';
+import { eq } from 'drizzle-orm';
 import { createDb } from '../db/connection';
 import { competitions } from '../db/schema';
 
@@ -16,16 +17,37 @@ if (!DATABASE_URL) {
 const db = createDb(DATABASE_URL);
 
 async function seed() {
-  console.log('Seeding competition data...');
+  try {
+    console.log('Seeding competition data...');
 
-  await db.insert(competitions).values({
-    name: '2025年ボディメイクチャレンジ',
-    startDate: new Date('2025-06-01'),
-    endDate: new Date('2025-12-31T23:59:59'),
-    isActive: true,
-  });
+    const competitionName = '2025年ボディメイクチャレンジ';
 
-  console.log('Done.');
+    const existing = await db
+      .select()
+      .from(competitions)
+      .where(eq(competitions.name, competitionName))
+      .limit(1);
+
+    if (existing.length > 0) {
+      console.log('Competition already exists. Skipping...');
+      return;
+    }
+
+    await db.insert(competitions).values({
+      name: competitionName,
+      startDate: new Date('2025-06-01'),
+      endDate: new Date('2025-12-31T23:59:59'),
+      isActive: true,
+    });
+
+    console.log('Competition created.');
+  } catch (error) {
+    console.error('Error seeding competition:', error);
+    process.exit(1);
+  } finally {
+    console.log('Done.');
+    process.exit(0);
+  }
 }
 
-seed().catch(console.error);
+seed();

@@ -1,3 +1,4 @@
+import type { RankingData } from '@body-tracker/shared';
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { bodyRecords, competitions, users } from '../db/schema';
@@ -28,9 +29,9 @@ ranking.get('/', authMiddleware, async (c) => {
       return c.json({
         competitionName: '開催中のコンペティションはありません',
         startDate: '',
-        endDate: null,
+        endDate: '',
         rankings: [],
-      });
+      } satisfies RankingData);
     }
 
     // 2. 期間内の全記録を取得 (ユーザー情報も結合)
@@ -130,7 +131,7 @@ ranking.get('/', authMiddleware, async (c) => {
       startDate: activeCompetition.startDate.toISOString().split('T')[0],
       endDate: activeCompetition.endDate.toISOString().split('T')[0],
       rankings,
-    });
+    } satisfies RankingData);
   } catch (error) {
     console.error('Ranking aggregation error:', error);
     return c.json({ error: 'ランキングの集計に失敗しました' }, 500);
