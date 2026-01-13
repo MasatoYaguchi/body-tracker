@@ -223,7 +223,13 @@ app.delete('/api/records/:id', authMiddleware, async (c) => {
     const [deletedRecord] = await c.var.db
       .update(bodyRecords)
       .set({ deletedAt: new Date() })
-      .where(and(eq(bodyRecords.id, id), eq(bodyRecords.userId, userPayload.userId)))
+      .where(
+        and(
+          eq(bodyRecords.id, id),
+          eq(bodyRecords.userId, userPayload.userId),
+          isNull(bodyRecords.deletedAt),
+        ),
+      )
       .returning();
 
     if (!deletedRecord) {
