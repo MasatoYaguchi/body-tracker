@@ -1,4 +1,4 @@
-import { decimal, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, decimal, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 // usersテーブル定義（実際のDBに合わせて修正）
 export const users = pgTable('users', {
@@ -35,3 +35,16 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type BodyRecord = typeof bodyRecords.$inferSelect;
 export type NewBodyRecord = typeof bodyRecords.$inferInsert;
+
+export const competitions = pgTable('competitions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+  endDate: timestamp('end_date', { withTimezone: true }).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+export type Competition = typeof competitions.$inferSelect;
+export type NewCompetition = typeof competitions.$inferInsert;
