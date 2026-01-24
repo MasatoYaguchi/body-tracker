@@ -25,6 +25,26 @@ class authApiClient {
   }
 
   /**
+   * 認証なしでAPIリクエストを実行（公開エンドポイント用）
+   * @param endpoint - APIエンドポイント (例: 'ranking')
+   * @param options - fetchオプション
+   */
+  async fetchPublic(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const url = `${this.baseURL}/${cleanEndpoint}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  }
+
+  /**
    * 認証付きでAPIリクエストを実行
    * @param endpoint - APIエンドポイント (例: 'ranking')
    * @param options - fetchオプション
