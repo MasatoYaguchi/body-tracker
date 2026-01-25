@@ -13,7 +13,8 @@ export function RankingPage(): React.ReactElement {
   useEffect(() => {
     const fetchRanking = async () => {
       try {
-        const response = await authApi.fetchWithAuth('ranking');
+        // ランキングは公開APIなので認証不要で取得
+        const response = await authApi.fetchPublic('ranking');
         if (!response.ok) {
           throw new Error('ランキングデータの取得に失敗しました');
         }
