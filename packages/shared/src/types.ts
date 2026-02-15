@@ -24,7 +24,7 @@ export interface UpdateBodyRecordRequest extends CreateBodyRecordRequest {}
 
 export interface RankingParticipant {
   rank: number;
-  userId: string;
+  userId?: string; // 未認証時は undefined
   username: string;
   baselineWeight: number;
   currentWeight: number;

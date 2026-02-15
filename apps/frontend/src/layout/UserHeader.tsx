@@ -84,6 +84,7 @@ export function UserHeader({
               className="flex items-center focus:outline-none group"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-haspopup="true"
+              aria-expanded={isMenuOpen}
             >
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 text-primary-600">

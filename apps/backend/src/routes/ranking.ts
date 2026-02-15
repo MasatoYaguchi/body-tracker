@@ -1,8 +1,8 @@
 import type { RankingData } from '@body-tracker/shared';
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { verifyJWT } from '../auth/google';
 import { bodyRecords, competitions, users } from '../db/schema';
+import { optionalAuthMiddleware } from '../middleware/auth';
 import type { Bindings, Variables } from '../types';
 
 const ranking = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -23,29 +23,14 @@ function getAnonymousName(index: number): string {
  * GET /api/ranking
  *
  * 誰でも閲覧可能（認証不要）
- * ただし、未認証ユーザーの場合は名前を匿名化する
+ * ただし、未認証ユーザーの場合は名前を匿名化し、userIdを除外する
  */
-ranking.get('/', async (c) => {
+ranking.get('/', optionalAuthMiddleware, async (c) => {
   const db = c.var.db;
-  const env = c.env;
 
-  // 0. 認証状態のチェック（オプショナル）
-  let isAuthenticated = false;
-  const authHeader = c.req.header('Authorization');
-
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    try {
-      if (token) {
-        // トークン検証に成功すれば認証済みとみなす
-        await verifyJWT(token, env.JWT_SECRET);
-        isAuthenticated = true;
-      }
-    } catch (e) {
-      // 検証失敗時はゲストとして扱う（ログだけ残す）
-      console.log('Optional auth check failed:', e);
-    }
-  }
+  // オプショナル認証ミドルウェアで認証済みかチェック
+  const user = c.get('user');
+  const isAuthenticated = !!user;
 
   try {
     // 1. 最新のアクティブなコンペティションを取得
@@ -153,15 +138,24 @@ ranking.get('/', async (c) => {
       })
       // スコアが高い順にソート
       .sort((a, b) => b.totalScore - a.totalScore)
-      // ランク付け
+      // ランク付けと匿名化
       .map((item, index) => {
-        // 未認証ユーザーの場合は名前を匿名化 (User A, User B...)
+        // 未認証ユーザーの場合は名前を匿名化し、userIdを除外
         const displayName = isAuthenticated ? item.username : getAnonymousName(index);
 
         return {
           rank: index + 1,
-          ...item,
-          username: displayName, // 名前を上書き
+          // 認証済みの場合のみ userId を含める
+          ...(isAuthenticated ? { userId: item.userId } : {}),
+          username: displayName,
+          baselineWeight: item.baselineWeight,
+          currentWeight: item.currentWeight,
+          weightLossRate: item.weightLossRate,
+          baselineBodyFat: item.baselineBodyFat,
+          currentBodyFat: item.currentBodyFat,
+          bodyFatLossRate: item.bodyFatLossRate,
+          totalScore: item.totalScore,
+          recordedAt: item.recordedAt,
         };
       });
 

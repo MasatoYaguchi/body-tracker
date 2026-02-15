@@ -1,5 +1,6 @@
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type * as schema from './db/schema';
+import type { AuthenticatedUser } from './middleware/auth';
 
 export type Bindings = {
   DATABASE_URL: string;
@@ -11,4 +12,5 @@ export type Bindings = {
 
 export type Variables = {
   db: NeonHttpDatabase<typeof schema>;
+  user?: AuthenticatedUser;
 };

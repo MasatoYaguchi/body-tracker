@@ -6,8 +6,8 @@ import { useAuth } from '../auth/useAuth';
 import { UserHeader } from './UserHeader';
 
 /**
- * 認証済みユーザー向けのメインレイアウト
- * ヘッダーとメインコンテンツエリア、プロフィール登録モーダルを含む
+ * 認証済みユーザーおよびゲスト共通のメインレイアウト
+ * ヘッダーとメインコンテンツエリアを提供し、認証済みユーザーにはプロフィール登録モーダルも含む
  */
 export function MainLayout(): React.ReactElement {
   const { user } = useAuth();
