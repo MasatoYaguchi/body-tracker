@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { authApi } from '../auth/services/authApi';
+import { useAuth } from '../auth/useAuth';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { RankingTable } from './RankingTable';
 import type { RankingData } from './types';
@@ -9,11 +10,15 @@ export function RankingPage(): React.ReactElement {
   const [data, setData] = useState<RankingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchRanking = async () => {
       try {
-        const response = await authApi.fetchWithAuth('ranking');
+        // ログイン済みなら認証付きで、未ログインなら公開APIとして取得
+        const response = isAuthenticated
+          ? await authApi.fetchWithAuth('ranking')
+          : await authApi.fetchPublic('ranking');
         if (!response.ok) {
           throw new Error('ランキングデータの取得に失敗しました');
         }
@@ -28,7 +33,7 @@ export function RankingPage(): React.ReactElement {
     };
 
     fetchRanking();
-  }, []);
+  }, [isAuthenticated]);
 
   if (loading) {
     return <LoadingSpinner size="large" message="ランキングを集計中..." />;

@@ -2,17 +2,35 @@ import type { RankingData } from '@body-tracker/shared';
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { bodyRecords, competitions, users } from '../db/schema';
-import { authMiddleware } from '../middleware/auth';
+import { optionalAuthMiddleware } from '../middleware/auth';
 import type { Bindings, Variables } from '../types';
 
 const ranking = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 /**
+ * 0-indexedの数値を受け取り、"User A", "User B" ... のような匿名名を生成する
+ */
+function getAnonymousName(index: number): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const char = alphabet[index % 26];
+  const loop = Math.floor(index / 26);
+  const suffix = loop > 0 ? (loop + 1).toString() : '';
+  return `${char}${suffix}さん`;
+}
+
+/**
  * ランキングデータ取得エンドポイント
  * GET /api/ranking
+ *
+ * 誰でも閲覧可能（認証不要）
+ * ただし、未認証ユーザーの場合は名前を匿名化し、userIdを除外する
  */
-ranking.get('/', authMiddleware, async (c) => {
+ranking.get('/', optionalAuthMiddleware, async (c) => {
   const db = c.var.db;
+
+  // オプショナル認証ミドルウェアで認証済みかチェック
+  const user = c.get('user');
+  const isAuthenticated = !!user;
 
   try {
     // 1. 最新のアクティブなコンペティションを取得
@@ -120,11 +138,26 @@ ranking.get('/', authMiddleware, async (c) => {
       })
       // スコアが高い順にソート
       .sort((a, b) => b.totalScore - a.totalScore)
-      // ランク付け
-      .map((item, index) => ({
-        rank: index + 1,
-        ...item,
-      }));
+      // ランク付けと匿名化
+      .map((item, index) => {
+        // 未認証ユーザーの場合は名前を匿名化し、userIdを除外
+        const displayName = isAuthenticated ? item.username : getAnonymousName(index);
+
+        return {
+          rank: index + 1,
+          // 認証済みの場合のみ userId を含める
+          ...(isAuthenticated ? { userId: item.userId } : {}),
+          username: displayName,
+          baselineWeight: item.baselineWeight,
+          currentWeight: item.currentWeight,
+          weightLossRate: item.weightLossRate,
+          baselineBodyFat: item.baselineBodyFat,
+          currentBodyFat: item.currentBodyFat,
+          bodyFatLossRate: item.bodyFatLossRate,
+          totalScore: item.totalScore,
+          recordedAt: item.recordedAt,
+        };
+      });
 
     return c.json({
       competitionName: activeCompetition.name,
