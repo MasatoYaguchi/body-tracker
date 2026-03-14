@@ -159,6 +159,17 @@ export function UserHeader({
                   >
                     ランキング 🏆
                   </Link>
+                  <Link
+                    to="/activities"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block w-full text-left px-4 py-2 text-sm ${
+                      isCurrentPath('/activities')
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    活動記録 📝
+                  </Link>
                 </div>
               </>
             )}
@@ -184,6 +195,16 @@ export function UserHeader({
                 }`}
               >
                 ランキング 🏆
+              </Link>
+              <Link
+                to="/activities"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isCurrentPath('/activities')
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                活動記録 📝
               </Link>
             </nav>
           </div>
@@ -279,6 +300,14 @@ export function UserHeader({
             }`}
           >
             ランキング 🏆
+          </Link>
+          <Link
+            to="/activities"
+            className={`flex-1 py-2 text-center text-sm font-medium ${
+              isCurrentPath('/activities') ? 'text-indigo-600' : 'text-gray-500'
+            }`}
+          >
+            活動記録 📝
           </Link>
         </div>
       </div>

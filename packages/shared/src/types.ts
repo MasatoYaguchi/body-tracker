@@ -52,3 +52,45 @@ export interface ApiResponse<T> {
 export interface ApiErrorResponse {
   error: string;
 }
+
+// ========== 活動記録 ==========
+
+// 運動種目マスタ
+export interface ExerciseType {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
+// 運動エントリ（1日に複数の運動を記録可能）
+export interface ExerciseEntry {
+  exerciseTypeId: string;
+  exerciseType?: ExerciseType;
+  minutes: number;
+}
+
+// 活動記録
+export interface ActivityRecord {
+  id: string;
+  date: string;
+  exercises: ExerciseEntry[]; // 複数の運動を記録可能
+  mealRating?: number; // 1-5
+  hadSnack: boolean;
+  hadAlcohol: boolean;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface CreateActivityRecordRequest {
+  date: string;
+  exercises: Omit<ExerciseEntry, 'exerciseType'>[];
+  mealRating?: number;
+  hadSnack: boolean;
+  hadAlcohol: boolean;
+  notes?: string;
+}
+
+export interface CreateExerciseTypeRequest {
+  name: string;
+  sortOrder?: number;
+}
