@@ -25,6 +25,26 @@ class authApiClient {
   }
 
   /**
+   * 認証なしでAPIリクエストを実行（公開エンドポイント用）
+   * @param endpoint - APIエンドポイント (例: 'ranking')
+   * @param options - fetchオプション
+   */
+  async fetchPublic(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const url = `${this.baseURL}/${cleanEndpoint}`;
+
+    const headers = new Headers(options.headers);
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  }
+
+  /**
    * 認証付きでAPIリクエストを実行
    * @param endpoint - APIエンドポイント (例: 'ranking')
    * @param options - fetchオプション
@@ -39,11 +59,11 @@ class authApiClient {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     const url = `${this.baseURL}/${cleanEndpoint}`;
 
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-      Authorization: `Bearer ${token}`,
-    };
+    const headers = new Headers(options.headers);
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+    headers.set('Authorization', `Bearer ${token}`);
 
     const response = await fetch(url, {
       ...options,

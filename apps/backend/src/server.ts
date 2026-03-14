@@ -1,5 +1,5 @@
 import { type Stats, validateBodyRecord } from '@body-tracker/shared';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { validator } from 'hono/validator';
@@ -88,11 +88,11 @@ app.get('/api/records', authMiddleware, async (c) => {
 
     console.log('📊 記録取得リクエスト - ユーザー:', userPayload.email);
 
-    // ユーザーに関連する記録のみ取得
+    // ユーザーに関連する記録のみ取得（論理削除されていないもの）
     const userRecords = await c.var.db
       .select()
       .from(bodyRecords)
-      .where(eq(bodyRecords.userId, userPayload.userId))
+      .where(and(eq(bodyRecords.userId, userPayload.userId), isNull(bodyRecords.deletedAt)))
       .orderBy(desc(bodyRecords.recordedDate));
 
     // DECIMALを数値に変換してフロントエンドに送信
@@ -168,7 +168,7 @@ app.put('/api/records/:id', authMiddleware, bodyRecordValidator, async (c) => {
 
     console.log('✏️ 記録更新リクエスト - ユーザー:', userPayload.email, 'レコードID:', id);
 
-    // ユーザーの記録のみ更新可能
+    // ユーザーの記録のみ更新可能（論理削除されていないもの）
     const [updatedRecord] = await c.var.db
       .update(bodyRecords)
       .set({
@@ -176,7 +176,13 @@ app.put('/api/records/:id', authMiddleware, bodyRecordValidator, async (c) => {
         bodyFatPercentage: bodyFatPercentage.toString(),
         recordedDate: new Date(date),
       })
-      .where(and(eq(bodyRecords.id, id), eq(bodyRecords.userId, userPayload.userId)))
+      .where(
+        and(
+          eq(bodyRecords.id, id),
+          eq(bodyRecords.userId, userPayload.userId),
+          isNull(bodyRecords.deletedAt),
+        ),
+      )
       .returning();
 
     if (!updatedRecord) {
@@ -213,9 +219,10 @@ app.delete('/api/records/:id', authMiddleware, async (c) => {
 
     console.log('🗑️ 記録削除リクエスト - ユーザー:', userPayload.email, 'レコードID:', id);
 
-    // ユーザーの記録のみ削除可能
+    // ユーザーの記録のみ削除可能（論理削除）
     const [deletedRecord] = await c.var.db
-      .delete(bodyRecords)
+      .update(bodyRecords)
+      .set({ deletedAt: new Date() })
       .where(and(eq(bodyRecords.id, id), eq(bodyRecords.userId, userPayload.userId)))
       .returning();
 
@@ -244,11 +251,11 @@ app.get('/api/stats', authMiddleware, async (c) => {
 
     console.log('📈 統計情報取得リクエスト - ユーザー:', userPayload.email);
 
-    // ユーザーの記録のみ集計
+    // ユーザーの記録のみ集計（論理削除されていないもの）
     const allRecords = await c.var.db
       .select()
       .from(bodyRecords)
-      .where(eq(bodyRecords.userId, userPayload.userId))
+      .where(and(eq(bodyRecords.userId, userPayload.userId), isNull(bodyRecords.deletedAt)))
       .orderBy(desc(bodyRecords.recordedDate));
 
     if (allRecords.length === 0) {

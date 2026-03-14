@@ -1,75 +1,93 @@
-import { Suspense, useState } from 'react';
-import { AuthProvider, useAuth, useAuthConditional } from './auth';
+import type React from 'react';
+import { Suspense } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider, useAuth } from './auth';
 import { AuthCallback } from './auth/components/AuthCallback';
-import { UserNameRegistrationModal } from './auth/components/UserNameRegistrationModal';
 import { Dashboard } from './dashboard/Dashboard';
 import { LoginScreen } from './layout/LoginScreen';
-import { UserHeader } from './layout/UserHeader';
+import { MainLayout } from './layout/MainLayout';
 import { RankingPage } from './ranking/RankingPage';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 
 /**
- * 🆕 React 19新機能を活用したメインアプリケーションコンテンツ
- *
- * - useAuthConditional: 認証状態による条件付きレンダリング
- * - 分割されたコンポーネントによる保守性向上
+ * 認証ガードコンポーネント
+ * 未認証ユーザーはログイン画面へリダイレクト
  */
-function AppContent(): React.ReactElement {
-  const { user } = useAuth();
-  const { showForAuth, showForGuest, showWhileLoading } = useAuthConditional();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'ranking'>('dashboard');
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
 
-  // ユーザー名が未設定の場合、または手動で開いた場合にモーダルを表示
-  // Note: ユーザーが名前を設定した後も、手動で開いている場合(isProfileModalOpen=true)は表示され続ける
-  const showNameRegistration = (user && !user.name) || isProfileModalOpen;
+  // 初期ロード中はスピナーを表示
+  if (isLoading) return <LoadingSpinner fullScreen message="認証情報を確認中..." />;
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ローディング状態 */}
-      {showWhileLoading(<LoadingSpinner size="large" message="認証状態を確認中..." fullScreen />)}
+  // 未認証ならログインへ
+  if (!user) return <Navigate to="/login" replace />;
 
-      {/* 認証済みユーザー向け */}
-      {showForAuth(
-        <div>
-          <UserHeader
-            currentView={currentView}
-            onNavigate={(view) => setCurrentView(view)}
-            onProfileClick={() => setIsProfileModalOpen(true)}
-          />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {currentView === 'dashboard' ? <Dashboard /> : <RankingPage />}
-          </main>
-          {/* ユーザー名登録モーダル */}
-          <UserNameRegistrationModal
-            isOpen={shouldShowProfileModal}
-            onClose={() => setIsProfileModalOpen(false)}
-          />
-        </div>,
-      )}
+  return <>{children}</>;
+}
 
-      {/* 未認証ユーザー向け */}
-      {showForGuest(<LoginScreen />)}
-    </div>
-  );
+/**
+ * ゲストガードコンポーネント
+ * 認証済みユーザーはダッシュボードへリダイレクト（ログイン画面などの二重アクセス防止）
+ */
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return <LoadingSpinner fullScreen />;
+
+  // 認証済みならダッシュボードへ
+  if (user) return <Navigate to="/" replace />;
+
+  return <>{children}</>;
 }
 
 /**
  * ルートアプリケーションコンポーネント
  *
- * 🆕 React 19新機能:
- * - Suspenseによる段階的読み込み
- * - プロバイダーの階層化
- * - エラーバウンダリーとの統合
+ * react-router-domによるルーティング管理に移行
  *
- * @returns React.ReactElement
+ * - / : ダッシュボード (要認証)
+ * - /ranking : ランキング (誰でも閲覧可)
+ * - /login : ログイン (ゲストのみ)
  */
 export default function App(): React.ReactElement {
-  if (window.location.pathname === '/auth/callback') return <AuthCallback />;
   return (
     <Suspense fallback={<LoadingSpinner size="large" message="読み込み中..." fullScreen />}>
       <AuthProvider>
-        <AppContent />
+        <BrowserRouter>
+          <Routes>
+            {/* OAuthコールバック - 最優先 */}
+            <Route path="/auth/callback" element={<AuthCallback />} />
+
+            {/* ゲストルート */}
+            <Route
+              path="/login"
+              element={
+                <GuestRoute>
+                  <LoginScreen />
+                </GuestRoute>
+              }
+            />
+
+            {/* メインレイアウト適用ルート */}
+            <Route element={<MainLayout />}>
+              {/* ダッシュボード (認証必須) */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ランキング (公開) */}
+              <Route path="/ranking" element={<RankingPage />} />
+            </Route>
+
+            {/* 未定義パスはルートへ */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
       </AuthProvider>
     </Suspense>
   );

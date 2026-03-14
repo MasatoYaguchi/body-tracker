@@ -1,0 +1,87 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Minimal Code Flow</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+    body {
+        font-family: system-ui, sans-serif;
+        background: #f5f7fa;
+        padding: 24px
+    }
+
+    h1 {
+        margin: 0 0 12px;
+        font-size: 20px
+    }
+
+    button {
+        cursor: pointer;
+        padding: 8px 16px;
+        border: 1px solid #2563eb;
+        background: #1d4ed8;
+        color: #fff;
+        border-radius: 6px;
+        font-size: 14px
+    }
+
+    pre {
+        background: #111;
+        color: #eee;
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        overflow: auto
+    }
+
+    #status {
+        margin: 8px 0;
+        font-weight: 600
+    }
+
+    .error {
+        color: #b91c1c
+    }
+
+    .ok {
+        color: #065f46
+    }
+</style>
+<h1>Minimal Google Code+PKCE Test</h1>
+<p>Client ID: <code id="cid"></code></p>
+<p>Status: <span id="status">idle</span></p>
+<button id="start">Start Login</button>
+<pre id="log"></pre>
+<script>
+    const CID = new URLSearchParams(location.search).get('cid') || '';
+    document.getElementById('cid').textContent = CID || '(add ?cid=CLIENT_ID)';
+    const log = m => { const el = document.getElementById('log'); el.textContent += m + '\n'; el.scrollTop = el.scrollHeight };
+    const setStatus = (t, ok) => { const s = document.getElementById('status'); s.textContent = t; s.className = ok ? 'ok' : 'error' };
+    function b64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+    async function start() {
+        if (!CID) { alert('cid missing'); return; }
+        const verifier = [...crypto.getRandomValues(new Uint8Array(32))].map(b => ('0' + b.toString(16)).slice(-2)).join('');
+        sessionStorage.setItem('pkce_v', verifier);
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+        const challenge = b64url(digest);
+        const p = new URLSearchParams({ client_id: CID, redirect_uri: location.origin + '/gsi-test.html', response_type: 'code', scope: 'openid email profile', state: 'mtest', code_challenge: challenge, code_challenge_method: 'S256', prompt: 'consent' });
+        const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + p.toString();
+        log('Navigate: ' + url);
+        location.assign(url);
+    }
+    async function maybe() {
+        const qs = new URLSearchParams(location.search);
+        if (qs.get('code') && qs.get('state') === 'mtest') {
+            setStatus('code -> exchanging', false);
+            const code = qs.get('code');
+            const verifier = sessionStorage.getItem('pkce_v');
+            if (!verifier) { setStatus('verifier missing', false); return; }
+            log('POST /api/auth/google/code');
+            try {
+                const res = await fetch('http://localhost:8000/api/auth/google/code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, codeVerifier: verifier, redirectUri: location.origin + '/gsi-test.html' }) });
+                const data = await res.json();
+                if (res.ok) { setStatus('OK JWT len=' + data.token.length, true); log('user ' + data.user.email); } else { setStatus('exchange failed', false); log(JSON.stringify(data)); }
+            } catch (e) { setStatus('exchange err', false); log(e.message); }
+        }
+    }
+    document.getElementById('start').onclick = start; maybe();
+</script>

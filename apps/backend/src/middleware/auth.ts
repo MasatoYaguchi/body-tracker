@@ -100,7 +100,7 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
 
       if (token) {
         const env = c.env as Bindings;
-        const decoded = verifyJWT(token, env.JWT_SECRET);
+        const decoded = await verifyJWT(token, env.JWT_SECRET);
 
         // 型ガード
         if (typeof decoded !== 'string') {
