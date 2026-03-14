@@ -23,8 +23,41 @@ pnpm install
 # 共有パッケージビルド
 pnpm build:shared
 
-# 開発サーバー起動
+# 開発サーバー起動 (フロント:3000, バック:8787)
 pnpm dev
+```
+
+## プロジェクト構成
+
+```
+body-tracker/
+├── apps/
+│   ├── frontend/          # React 19 + Vite + Tailwind CSS
+│   └── backend/           # Hono (Cloudflare Workers)
+├── packages/
+│   └── shared/            # 共有型定義・バリデーション
+├── doc/                   # ドキュメント
+└── .github/workflows/     # CI/CD (GitHub Actions)
+```
+
+## 開発コマンド
+
+```bash
+# 開発
+pnpm dev                  # フロント + バック同時起動
+pnpm dev:frontend         # フロントエンドのみ
+pnpm dev:backend          # バックエンドのみ
+
+# ビルド・品質チェック
+pnpm build                # 全パッケージビルド
+pnpm lint                 # Biome + ESLint
+pnpm format               # Biomeフォーマット
+pnpm type-check           # TypeScript型チェック
+
+# データベース (バックエンド)
+pnpm db:migrate           # マイグレーション実行
+pnpm db:generate          # マイグレーションファイル生成
+pnpm db:studio            # Drizzle Studio (DB GUI)
 ```
 
 ## 技術スタック (抜粋)
