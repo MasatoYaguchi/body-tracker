@@ -1,5 +1,6 @@
 import type { ActivityRecord, ExerciseEntry, ExerciseType } from '@body-tracker/shared';
 import { useEffect, useState } from 'react';
+import { RatingButtons } from '../ui/RatingButtons';
 
 interface ActivityFormProps {
   exerciseTypes: ExerciseType[];
@@ -10,13 +11,8 @@ interface ActivityFormProps {
   onManageExerciseTypes?: () => void;
 }
 
-const MEAL_RATINGS = [
-  { value: 1, label: '抑えた', color: 'bg-green-100 text-green-700' },
-  { value: 2, label: 'やや抑えた', color: 'bg-green-50 text-green-600' },
-  { value: 3, label: '普通', color: 'bg-gray-100 text-gray-700' },
-  { value: 4, label: 'やや食べすぎ', color: 'bg-orange-50 text-orange-600' },
-  { value: 5, label: '食べすぎ', color: 'bg-red-100 text-red-700' },
-];
+const MEAL_LABELS = ['抑えた', 'やや抑えた', '普通', 'やや食べすぎ', '食べすぎ'];
+const ALCOHOL_LABELS = ['飲まなかった', '少し飲んだ', '適量', 'やや飲みすぎ', '飲みすぎ'];
 
 interface ExerciseFormEntry {
   id: string; // フォーム内での一意識別用
@@ -47,7 +43,7 @@ export function ActivityForm({
   });
   const [mealRating, setMealRating] = useState(initialValues?.mealRating ?? 3);
   const [hadSnack, setHadSnack] = useState(initialValues?.hadSnack ?? false);
-  const [hadAlcohol, setHadAlcohol] = useState(initialValues?.hadAlcohol ?? false);
+  const [alcoholRating, setAlcoholRating] = useState(initialValues?.alcoholRating ?? 1);
   const [notes, setNotes] = useState(initialValues?.notes ?? '');
 
   // initialValuesが変わったらフォームをリセット
@@ -63,14 +59,14 @@ export function ActivityForm({
       );
       setMealRating(initialValues.mealRating ?? 3);
       setHadSnack(initialValues.hadSnack);
-      setHadAlcohol(initialValues.hadAlcohol);
+      setAlcoholRating(initialValues.alcoholRating ?? 1);
       setNotes(initialValues.notes ?? '');
     } else {
       setDate(today);
       setExercises([]);
       setMealRating(3);
       setHadSnack(false);
-      setHadAlcohol(false);
+      setAlcoholRating(1);
       setNotes('');
     }
   }, [initialValues, today]);
@@ -107,7 +103,7 @@ export function ActivityForm({
       exercises: validExercises,
       mealRating,
       hadSnack,
-      hadAlcohol,
+      alcoholRating,
       notes: notes || undefined,
     });
 
@@ -117,14 +113,14 @@ export function ActivityForm({
       setExercises([]);
       setMealRating(3);
       setHadSnack(false);
-      setHadAlcohol(false);
+      setAlcoholRating(1);
       setNotes('');
     }
   };
 
   return (
     <div className="card p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+      <h2 className="text-xl font-semibold text-content mb-4 flex items-center">
         <svg
           className="w-5 h-5 mr-2 text-green-600"
           fill="none"
@@ -140,7 +136,7 @@ export function ActivityForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 日付 */}
         <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="date" className="block text-sm font-medium text-content-secondary mb-1">
             日付
           </label>
           <input
@@ -148,14 +144,14 @@ export function ActivityForm({
             id="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-content focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
 
         {/* 運動セクション */}
-        <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
+        <div className="space-y-3 p-4 bg-surface-secondary rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-gray-700">運動</span>
+            <span className="font-bold text-content">運動</span>
             <div className="flex gap-2">
               {onManageExerciseTypes && (
                 <button
@@ -172,12 +168,12 @@ export function ActivityForm({
           {/* 運動リスト */}
           <div className="space-y-2">
             {exercises.map((exercise, index) => (
-              <div key={exercise.id} className="flex items-center gap-2 bg-white p-2 rounded-lg">
-                <span className="text-xs text-gray-400 w-4">{index + 1}</span>
+              <div key={exercise.id} className="flex items-center gap-2 bg-surface p-2 rounded-lg">
+                <span className="text-xs text-content-muted w-4">{index + 1}</span>
                 <select
                   value={exercise.exerciseTypeId}
                   onChange={(e) => updateExercise(exercise.id, 'exerciseTypeId', e.target.value)}
-                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-surface text-content focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   aria-label={`運動種目 ${index + 1}`}
                 >
                   <option value="">選択</option>
@@ -193,14 +189,14 @@ export function ActivityForm({
                   onChange={(e) => updateExercise(exercise.id, 'minutes', Number(e.target.value))}
                   min={1}
                   max={300}
-                  className="w-20 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-20 px-3 py-1.5 text-sm border border-border rounded-lg bg-surface text-content focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   aria-label={`運動時間 ${index + 1}`}
                 />
-                <span className="text-xs text-gray-500">分</span>
+                <span className="text-xs text-content-secondary">分</span>
                 <button
                   type="button"
                   onClick={() => removeExercise(exercise.id)}
-                  className="p-1 text-gray-400 hover:text-red-500"
+                  className="p-1 text-content-muted hover:text-danger"
                   aria-label={`運動 ${index + 1} を削除`}
                 >
                   <svg
@@ -226,7 +222,7 @@ export function ActivityForm({
           <button
             type="button"
             onClick={addExercise}
-            className="w-full py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors text-sm flex items-center justify-center gap-1"
+            className="w-full py-2 border-2 border-dashed border-primary-300 rounded-lg text-primary-600 hover:bg-primary-100 transition-colors text-sm flex items-center justify-center gap-1"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <title>追加</title>
@@ -242,32 +238,17 @@ export function ActivityForm({
         </div>
 
         {/* 食事セクション */}
-        <div className="space-y-3 p-4 bg-orange-50 rounded-lg">
-          <span className="font-medium text-gray-700">食事評価</span>
-          <div className="flex flex-wrap gap-2">
-            {MEAL_RATINGS.map((rating) => (
-              <button
-                key={rating.value}
-                type="button"
-                onClick={() => setMealRating(rating.value)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  mealRating === rating.value
-                    ? `${rating.color} ring-2 ring-offset-1 ring-current`
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
-              >
-                {rating.label}
-              </button>
-            ))}
-          </div>
+        <div className="space-y-3 p-4 bg-surface-secondary rounded-lg">
+          <span className="font-bold text-content">食事</span>
+          <RatingButtons labels={MEAL_LABELS} value={mealRating} onChange={setMealRating} />
 
           <div className="flex items-center justify-between pt-2">
-            <span className="text-gray-600">間食した？</span>
+            <span className="text-content-secondary">間食した？</span>
             <button
               type="button"
               onClick={() => setHadSnack(!hadSnack)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                hadSnack ? 'bg-orange-500' : 'bg-gray-300'
+                hadSnack ? 'bg-warning' : 'bg-border-secondary'
               }`}
             >
               <span
@@ -279,29 +260,19 @@ export function ActivityForm({
           </div>
         </div>
 
-        {/* 生活セクション */}
-        <div className="p-4 bg-purple-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-gray-700">飲酒した？</span>
-            <button
-              type="button"
-              onClick={() => setHadAlcohol(!hadAlcohol)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                hadAlcohol ? 'bg-purple-600' : 'bg-gray-300'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  hadAlcohol ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
+        {/* 飲酒セクション */}
+        <div className="space-y-3 p-4 bg-surface-secondary rounded-lg">
+          <span className="font-bold text-content">飲酒</span>
+          <RatingButtons
+            labels={ALCOHOL_LABELS}
+            value={alcoholRating}
+            onChange={setAlcoholRating}
+          />
         </div>
 
         {/* メモ */}
         <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="notes" className="block text-sm font-medium text-content-secondary mb-1">
             メモ（任意）
           </label>
           <textarea
@@ -310,7 +281,7 @@ export function ActivityForm({
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder="今日の振り返りなど..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-content focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
           />
         </div>
 
@@ -320,14 +291,14 @@ export function ActivityForm({
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-border text-content-secondary rounded-lg hover:bg-surface-secondary transition-colors"
             >
               キャンセル
             </button>
           )}
           <button
             type="submit"
-            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            className="flex-1 px-4 py-2 bg-success text-white rounded-lg hover:opacity-90 transition-colors font-medium"
           >
             {isEditing ? '更新する' : '記録する'}
           </button>

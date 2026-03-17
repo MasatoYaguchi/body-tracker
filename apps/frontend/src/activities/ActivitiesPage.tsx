@@ -25,7 +25,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       exercises: [{ typeIndex: 0, minutes: 30 }],
       mealRating: 3,
       hadSnack: false,
-      hadAlcohol: false,
+      alcoholRating: 1,
       notes: '朝のウォーキング',
     },
     {
@@ -36,7 +36,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       ],
       mealRating: 4,
       hadSnack: true,
-      hadAlcohol: true,
+      alcoholRating: 4,
       notes: 'ジムで筋トレ+ストレッチ。夜に飲み会',
     },
     {
@@ -44,7 +44,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       exercises: [],
       mealRating: 2,
       hadSnack: true,
-      hadAlcohol: false,
+      alcoholRating: 1,
       notes: '雨で運動できず',
     },
     {
@@ -52,7 +52,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       exercises: [{ typeIndex: 1, minutes: 40 }],
       mealRating: 3,
       hadSnack: false,
-      hadAlcohol: false,
+      alcoholRating: 1,
       notes: '夕方にランニング',
     },
     {
@@ -63,7 +63,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       ],
       mealRating: 2,
       hadSnack: false,
-      hadAlcohol: false,
+      alcoholRating: 2,
       notes: '',
     },
     {
@@ -71,7 +71,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       exercises: [],
       mealRating: 5,
       hadSnack: true,
-      hadAlcohol: true,
+      alcoholRating: 5,
       notes: '休日でだらけた',
     },
     {
@@ -79,7 +79,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       exercises: [{ typeIndex: 3, minutes: 20 }],
       mealRating: 3,
       hadSnack: false,
-      hadAlcohol: false,
+      alcoholRating: 3,
       notes: '軽くストレッチ',
     },
   ];
@@ -99,7 +99,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
       })),
       mealRating: data.mealRating,
       hadSnack: data.hadSnack,
-      hadAlcohol: data.hadAlcohol,
+      alcoholRating: data.alcoholRating,
       notes: data.notes,
       createdAt: new Date().toISOString(),
     });

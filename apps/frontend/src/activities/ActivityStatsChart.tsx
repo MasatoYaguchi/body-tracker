@@ -13,7 +13,7 @@ interface DayStats {
   exerciseMinutes: number;
   hadExercise: boolean;
   hadSnack: boolean;
-  hadAlcohol: boolean;
+  hadAlcohol: boolean; // alcoholRating >= 2 (少しでも飲んだ)
   mealRating: number | null;
 }
 
@@ -76,7 +76,7 @@ export function ActivityStatsChart({ activities }: ActivityStatsChartProps): Rea
         day.exerciseMinutes = activity.exercises.reduce((sum, e) => sum + e.minutes, 0);
         day.hadExercise = activity.exercises.length > 0;
         day.hadSnack = activity.hadSnack;
-        day.hadAlcohol = activity.hadAlcohol;
+        day.hadAlcohol = (activity.alcoholRating ?? 1) >= 2;
         day.mealRating = activity.mealRating ?? null;
       }
     }

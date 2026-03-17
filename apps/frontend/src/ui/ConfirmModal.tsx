@@ -108,7 +108,7 @@ export function ConfirmModal({
         />
 
         {/* モーダルコンテンツ */}
-        <div className="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+        <div className="relative bg-surface rounded-lg shadow-xl max-w-sm w-full p-6">
           <div className="flex items-start gap-4">
             <div
               className={`flex-shrink-0 w-10 h-10 rounded-full ${styles.iconBg} flex items-center justify-center`}
@@ -116,10 +116,10 @@ export function ConfirmModal({
               {styles.icon}
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-medium text-gray-900" id="confirm-modal-title">
+              <h3 className="text-lg font-medium text-content" id="confirm-modal-title">
                 {title}
               </h3>
-              <p className="mt-2 text-sm text-gray-500">{message}</p>
+              <p className="mt-2 text-sm text-content-secondary">{message}</p>
             </div>
           </div>
 
@@ -127,7 +127,7 @@ export function ConfirmModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              className="px-4 py-2 text-sm font-medium text-content-secondary bg-surface border border-border rounded-lg hover:bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-border"
             >
               {cancelLabel}
             </button>

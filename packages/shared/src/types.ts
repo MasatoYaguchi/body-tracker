@@ -76,7 +76,7 @@ export interface ActivityRecord {
   exercises: ExerciseEntry[]; // 複数の運動を記録可能
   mealRating?: number; // 1-5
   hadSnack: boolean;
-  hadAlcohol: boolean;
+  alcoholRating?: number; // 1-5 (1:飲まなかった, 5:飲みすぎ)
   notes?: string;
   createdAt: string;
 }
@@ -86,7 +86,7 @@ export interface CreateActivityRecordRequest {
   exercises: Omit<ExerciseEntry, 'exerciseType'>[];
   mealRating?: number;
   hadSnack: boolean;
-  hadAlcohol: boolean;
+  alcoholRating?: number;
   notes?: string;
 }
 
