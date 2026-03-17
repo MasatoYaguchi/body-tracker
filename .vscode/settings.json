@@ -68,6 +68,11 @@
     "editor.formatOnSave": true
   },
 
+  // CSS lint設定（Tailwindディレクティブの警告を抑制）
+  "css.validate": false,
+  "scss.validate": false,
+  "css.lint.unknownAtRules": "ignore",
+
   // TailwindCSS設定
   "tailwindCSS.includeLanguages": {
     "typescript": "typescript",

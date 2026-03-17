@@ -131,6 +131,7 @@ dist
 # Editor directories and files
 .vscode/launch.json
 .vscode/tasks.json
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
