@@ -1,8 +1,8 @@
 {
-  // TypeScript設定
-  "typescript.preferences.includePackageJsonAutoImports": "on",
-  "typescript.suggest.autoImports": true,
-  "typescript.updateImportsOnFileMove.enabled": "always",
+  // TypeScript/JavaScript共通設定
+  "js/ts.preferences.includePackageJsonAutoImports": "on",
+  "js/ts.suggest.autoImports": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
   "typescript.suggest.includeCompletionsForModuleExports": true,
 
   // フォーマッター設定（Biomeを優先）
@@ -121,5 +121,5 @@
   "explorer.confirmDragAndDrop": false,
   "workbench.editor.enablePreview": false,
   "breadcrumbs.enabled": true,
-  "cSpell.words": ["Fitbit", "PKCE"]
+  "cSpell.words": ["Fitbit", "PKCE", "WCAG", "bestpractices", "nosniff"]
 }

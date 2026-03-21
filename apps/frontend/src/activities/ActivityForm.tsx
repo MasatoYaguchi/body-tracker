@@ -243,20 +243,28 @@ export function ActivityForm({
           <RatingButtons labels={MEAL_LABELS} value={mealRating} onChange={setMealRating} />
 
           <div className="flex items-center justify-between pt-2">
-            <span className="text-content-secondary">間食した？</span>
-            <button
-              type="button"
-              onClick={() => setHadSnack(!hadSnack)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                hadSnack ? 'bg-warning' : 'bg-border-secondary'
-              }`}
-            >
+            <span id="snack-label" className="text-content-secondary">
+              間食した？
+            </span>
+            <label className="relative inline-flex h-6 w-11 items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hadSnack}
+                onChange={(e) => setHadSnack(e.target.checked)}
+                className="sr-only peer"
+                aria-labelledby="snack-label"
+              />
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`absolute inset-0 rounded-full transition-colors ${
+                  hadSnack ? 'bg-warning' : 'bg-border-secondary'
+                }`}
+              />
+              <span
+                className={`absolute h-4 w-4 rounded-full bg-white transition-transform ${
                   hadSnack ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
-            </button>
+            </label>
           </div>
         </div>
 

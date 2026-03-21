@@ -1,5 +1,6 @@
 import type { ActivityRecord, ExerciseType } from '@body-tracker/shared';
 import { useState } from 'react';
+import { Modal } from '../ui/Modal';
 import { ActivityForm } from './ActivityForm';
 import { ActivityList } from './ActivityList';
 import { ActivityStatsChart } from './ActivityStatsChart';
@@ -192,13 +193,10 @@ export function ActivitiesPage(): React.ReactElement {
 
       {/* メインコンテンツ（フォームと一覧を上に配置） */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 入力フォーム */}
+        {/* 入力フォーム（新規作成専用） */}
         <ActivityForm
           exerciseTypes={exerciseTypes}
-          onSubmit={editingActivity ? handleUpdateActivity : handleAddActivity}
-          initialValues={editingActivity ?? undefined}
-          isEditing={!!editingActivity}
-          onCancel={editingActivity ? () => setEditingActivity(null) : undefined}
+          onSubmit={handleAddActivity}
           onManageExerciseTypes={() => setShowExerciseTypeManager(true)}
         />
 
@@ -212,6 +210,45 @@ export function ActivitiesPage(): React.ReactElement {
 
       {/* 統計グラフ（下に配置） */}
       <ActivityStatsChart activities={activities} />
+
+      {/* 編集モーダル */}
+      <Modal
+        isOpen={!!editingActivity}
+        onClose={() => setEditingActivity(null)}
+        title="記録を編集"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                if (editingActivity) {
+                  handleDeleteActivity(editingActivity.id);
+                }
+              }}
+              className="px-4 py-2 text-danger hover:bg-danger-light rounded-lg transition-colors"
+            >
+              削除
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingActivity(null)}
+              className="px-4 py-2 border border-border text-content-secondary rounded-lg hover:bg-surface-secondary transition-colors"
+            >
+              キャンセル
+            </button>
+          </>
+        }
+      >
+        {editingActivity && (
+          <ActivityForm
+            exerciseTypes={exerciseTypes}
+            onSubmit={handleUpdateActivity}
+            initialValues={editingActivity}
+            isEditing={true}
+            onManageExerciseTypes={() => setShowExerciseTypeManager(true)}
+          />
+        )}
+      </Modal>
 
       {/* 運動種目管理モーダル */}
       {showExerciseTypeManager && (

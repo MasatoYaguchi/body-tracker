@@ -192,7 +192,7 @@ export function ActivityStatsChart({ activities }: ActivityStatsChartProps): Rea
                 title={`${day.label}: ${day.exerciseMinutes}分`}
               >
                 <div
-                  className={`w-full rounded-t transition-all ${
+                  className={`w-full rounded-t ${
                     day.exerciseMinutes > 0 ? 'bg-blue-500' : 'bg-gray-200'
                   }`}
                   style={{ height: `${height}%` }}
