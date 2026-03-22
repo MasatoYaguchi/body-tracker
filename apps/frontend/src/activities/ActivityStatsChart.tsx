@@ -13,7 +13,7 @@ interface DayStats {
   exerciseMinutes: number;
   hadExercise: boolean;
   hadSnack: boolean;
-  hadAlcohol: boolean; // alcoholRating >= 2 (少しでも飲んだ)
+  alcoholRating: number;
   mealRating: number | null;
 }
 
@@ -55,7 +55,7 @@ export function ActivityStatsChart({ activities }: ActivityStatsChartProps): Rea
     for (let i = 0; i < days; i++) {
       const date = new Date(start);
       date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = date.toLocaleDateString('en-CA');
 
       dailyStats.push({
         date: dateStr,
@@ -63,7 +63,7 @@ export function ActivityStatsChart({ activities }: ActivityStatsChartProps): Rea
         exerciseMinutes: 0,
         hadExercise: false,
         hadSnack: false,
-        hadAlcohol: false,
+        alcoholRating: 1,
         mealRating: null,
       });
     }
@@ -76,7 +76,7 @@ export function ActivityStatsChart({ activities }: ActivityStatsChartProps): Rea
         day.exerciseMinutes = activity.exercises.reduce((sum, e) => sum + e.minutes, 0);
         day.hadExercise = activity.exercises.length > 0;
         day.hadSnack = activity.hadSnack;
-        day.hadAlcohol = (activity.alcoholRating ?? 1) >= 2;
+        day.alcoholRating = activity.alcoholRating ?? 1;
         day.mealRating = activity.mealRating ?? null;
       }
     }
@@ -89,7 +89,7 @@ export function ActivityStatsChart({ activities }: ActivityStatsChartProps): Rea
     const totalDays = stats.length;
     const exerciseDays = stats.filter((d) => d.hadExercise).length;
     const snackDays = stats.filter((d) => d.hadSnack).length;
-    const alcoholDays = stats.filter((d) => d.hadAlcohol).length;
+    const alcoholDays = stats.filter((d) => d.alcoholRating >= 2).length;
     const totalExerciseMinutes = stats.reduce((sum, d) => sum + d.exerciseMinutes, 0);
 
     return {
@@ -240,8 +240,8 @@ export function ActivityStatsChart({ activities }: ActivityStatsChartProps): Rea
               >
                 {day.hadExercise && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
                 {day.hadSnack && <span className="w-2 h-2 bg-orange-400 rounded-full" />}
-                {day.hadAlcohol && <span className="w-2 h-2 bg-purple-500 rounded-full" />}
-                {!day.hadExercise && !day.hadSnack && !day.hadAlcohol && (
+                {day.alcoholRating >= 2 && <span className="w-2 h-2 bg-purple-500 rounded-full" />}
+                {!day.hadExercise && !day.hadSnack && day.alcoholRating < 2 && (
                   <span className="w-2 h-2 bg-gray-200 rounded-full" />
                 )}
               </div>

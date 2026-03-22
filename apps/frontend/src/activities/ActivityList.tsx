@@ -47,7 +47,8 @@ const ALCOHOL_RATING_LABELS: Record<number, { label: string; color: string }> = 
 };
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
+  // YYYY-MM-DD形式をローカルタイムとして解釈する
+  const date = new Date(`${dateStr}T00:00:00`);
   const month = date.getMonth() + 1;
   const day = date.getDate();
   const weekday = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];

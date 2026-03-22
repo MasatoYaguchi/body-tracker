@@ -1,10 +1,14 @@
-import type { ActivityRecord, ExerciseEntry, ExerciseType } from '@body-tracker/shared';
+import type {
+  ActivityRecord,
+  CreateActivityRecordRequest,
+  ExerciseType,
+} from '@body-tracker/shared';
 import { useEffect, useState } from 'react';
 import { RatingButtons } from '../ui/RatingButtons';
 
 interface ActivityFormProps {
   exerciseTypes: ExerciseType[];
-  onSubmit: (data: Omit<ActivityRecord, 'id' | 'createdAt'>) => void;
+  onSubmit: (data: CreateActivityRecordRequest) => void;
   initialValues?: ActivityRecord;
   isEditing?: boolean;
   onCancel?: () => void;
@@ -28,7 +32,7 @@ export function ActivityForm({
   onCancel,
   onManageExerciseTypes,
 }: ActivityFormProps): React.ReactElement {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('en-CA');
 
   const [date, setDate] = useState(initialValues?.date ?? today);
   const [exercises, setExercises] = useState<ExerciseFormEntry[]>(() => {
@@ -90,12 +94,11 @@ export function ActivityForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validExercises: ExerciseEntry[] = exercises
+    const validExercises = exercises
       .filter((e) => e.exerciseTypeId && e.minutes > 0)
       .map((e) => ({
         exerciseTypeId: e.exerciseTypeId,
         minutes: e.minutes,
-        exerciseType: exerciseTypes.find((t) => t.id === e.exerciseTypeId),
       }));
 
     onSubmit({

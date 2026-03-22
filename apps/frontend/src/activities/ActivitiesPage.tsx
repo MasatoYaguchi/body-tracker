@@ -1,5 +1,10 @@
-import type { ActivityRecord, ExerciseType } from '@body-tracker/shared';
+import type {
+  ActivityRecord,
+  CreateActivityRecordRequest,
+  ExerciseType,
+} from '@body-tracker/shared';
 import { useState } from 'react';
+import { ConfirmModal } from '../ui/ConfirmModal';
 import { Modal } from '../ui/Modal';
 import { ActivityForm } from './ActivityForm';
 import { ActivityList } from './ActivityList';
@@ -88,7 +93,7 @@ function generateDummyActivities(exerciseTypes: ExerciseType[]): ActivityRecord[
   for (const data of dummyData) {
     const date = new Date(today);
     date.setDate(date.getDate() - data.daysAgo);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toLocaleDateString('en-CA');
 
     activities.push({
       id: `dummy-${data.daysAgo}`,
@@ -116,24 +121,33 @@ export function ActivitiesPage(): React.ReactElement {
   );
   const [editingActivity, setEditingActivity] = useState<ActivityRecord | null>(null);
   const [showExerciseTypeManager, setShowExerciseTypeManager] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // 活動記録の追加
-  const handleAddActivity = (data: Omit<ActivityRecord, 'id' | 'createdAt'>) => {
+  const handleAddActivity = (data: CreateActivityRecordRequest) => {
     const newActivity: ActivityRecord = {
       ...data,
       id: String(Date.now()),
       createdAt: new Date().toISOString(),
+      exercises: data.exercises.map((e) => ({
+        ...e,
+        exerciseType: exerciseTypes.find((t) => t.id === e.exerciseTypeId),
+      })),
     };
     setActivities([newActivity, ...activities]);
   };
 
   // 活動記録の更新
-  const handleUpdateActivity = (data: Omit<ActivityRecord, 'id' | 'createdAt'>) => {
+  const handleUpdateActivity = (data: CreateActivityRecordRequest) => {
     if (!editingActivity) return;
     const updated: ActivityRecord = {
       ...data,
       id: editingActivity.id,
       createdAt: editingActivity.createdAt,
+      exercises: data.exercises.map((e) => ({
+        ...e,
+        exerciseType: exerciseTypes.find((t) => t.id === e.exerciseTypeId),
+      })),
     };
     setActivities(activities.map((a) => (a.id === editingActivity.id ? updated : a)));
     setEditingActivity(null);
@@ -220,11 +234,7 @@ export function ActivitiesPage(): React.ReactElement {
           <>
             <button
               type="button"
-              onClick={() => {
-                if (editingActivity) {
-                  handleDeleteActivity(editingActivity.id);
-                }
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               className="px-4 py-2 text-danger hover:bg-danger-light rounded-lg transition-colors"
             >
               削除
@@ -249,6 +259,23 @@ export function ActivitiesPage(): React.ReactElement {
           />
         )}
       </Modal>
+
+      {/* 編集モーダル内の削除確認 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          if (editingActivity) {
+            handleDeleteActivity(editingActivity.id);
+          }
+          setShowDeleteConfirm(false);
+        }}
+        title="記録を削除"
+        message="この記録を削除しますか？"
+        confirmLabel="削除"
+        cancelLabel="キャンセル"
+        variant="danger"
+      />
 
       {/* 運動種目管理モーダル */}
       {showExerciseTypeManager && (

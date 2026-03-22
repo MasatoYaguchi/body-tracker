@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'class', // 手動切り替え対応
+  darkMode: 'media', // システム設定に追従
   theme: {
     extend: {
       colors: {

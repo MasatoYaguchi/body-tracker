@@ -1,8 +1,6 @@
 {
-  // TypeScript/JavaScript共通設定
-  "js/ts.preferences.includePackageJsonAutoImports": "on",
-  "js/ts.suggest.autoImports": true,
-  "js/ts.updateImportsOnFileMove.enabled": "always",
+  // TypeScript/JavaScript共通設定（統合キー）
+  "js/ts.implicitProjectConfig.checkJs": true,
   "typescript.suggest.includeCompletionsForModuleExports": true,
 
   // フォーマッター設定（Biomeを優先）

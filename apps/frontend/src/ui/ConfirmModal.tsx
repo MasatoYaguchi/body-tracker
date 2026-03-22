@@ -99,12 +99,12 @@ export function ConfirmModal({
   return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="confirm-modal-title">
       <div className="flex items-center justify-center min-h-screen p-4">
-        {/* 背景オーバーレイ */}
+        {/* 背景オーバーレイ - Escapeはsrc/hooks/useModal.tsでdocumentレベルで処理済み */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: useModalがdocumentレベルでEscapeを処理 */}
         <div
           className="fixed inset-0 bg-black/50 transition-opacity"
           aria-hidden="true"
           onClick={onClose}
-          onKeyDown={(e) => e.key === 'Escape' && onClose()}
         />
 
         {/* モーダルコンテンツ */}

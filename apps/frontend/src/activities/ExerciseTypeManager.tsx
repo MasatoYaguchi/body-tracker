@@ -77,12 +77,12 @@ export function ExerciseTypeManager({
         aria-labelledby="exercise-type-manager-title"
       >
         <div className="flex items-center justify-center min-h-screen p-4">
-          {/* 背景オーバーレイ */}
+          {/* 背景オーバーレイ - EscapeはuseModalがdocumentレベルで処理済み */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: useModalがdocumentレベルでEscapeを処理 */}
           <div
             className="fixed inset-0 bg-black/50 transition-opacity"
             aria-hidden="true"
             onClick={onClose}
-            onKeyDown={(e) => e.key === 'Escape' && onClose()}
           />
           {/* モーダルコンテンツ */}
           <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full max-h-[80vh] flex flex-col">
