@@ -1,0 +1,86 @@
+name: Backmerge main to develop
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backmerge:
+    runs-on: ubuntu-latest
+    name: Backmerge to develop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into develop
+        id: merge
+        run: |
+          git checkout develop
+          git pull origin develop
+
+          # マージを試行
+          if git merge origin/main --no-edit; then
+            echo "conflict=false" >> $GITHUB_OUTPUT
+
+            # 変更がある場合のみpush
+            if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/develop)" ]; then
+              git push origin develop
+              echo "pushed=true" >> $GITHUB_OUTPUT
+            else
+              echo "pushed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "conflict=true" >> $GITHUB_OUTPUT
+            git merge --abort
+          fi
+
+      - name: Create PR on conflict
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 既存のバックマージPRがあるか確認
+          EXISTING_PR=$(gh pr list --base develop --head main --json number --jq '.[0].number')
+
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --base develop \
+              --head main \
+              --title "chore: Backmerge main into develop (conflict)" \
+              --body "$(cat <<'EOF'
+          ## 自動バックマージ失敗
+
+          main → develop のマージでコンフリクトが発生しました。
+          手動で解決してください。
+
+          ### 手順
+          ```bash
+          git checkout develop
+          git pull origin develop
+          git merge origin/main
+          # コンフリクトを解決
+          git add .
+          git commit
+          git push origin develop
+          ```
+
+          ---
+          🤖 このPRは GitHub Actions によって自動作成されました
+          EOF
+          )"
+            echo "Created new PR for manual merge"
+          else
+            echo "PR #$EXISTING_PR already exists for backmerge"
+          fi
