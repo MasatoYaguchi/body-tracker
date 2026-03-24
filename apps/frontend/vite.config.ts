@@ -8,8 +8,8 @@ export default defineConfig({
     host: true, // Codespacesでの外部アクセス許可
     open: false, // 自動ブラウザ起動を無効化
   },
+  // Vite 8は互換レイヤーでesbuild設定を自動変換
   esbuild: {
-    // 本番ビルド時にconsole.logなどを削除
-    pure: ['console.log', 'console.info', 'console.debug', 'console.trace'],
+    drop: ['console', 'debugger'],
   },
 });
