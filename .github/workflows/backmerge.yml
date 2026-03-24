@@ -37,9 +37,6 @@ jobs:
             # 変更がある場合のみpush
             if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/develop)" ]; then
               git push origin develop
-              echo "pushed=true" >> $GITHUB_OUTPUT
-            else
-              echo "pushed=false" >> $GITHUB_OUTPUT
             fi
           else
             echo "conflict=true" >> $GITHUB_OUTPUT
@@ -52,7 +49,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 既存のバックマージPRがあるか確認
-          EXISTING_PR=$(gh pr list --base develop --head main --json number --jq '.[0].number')
+          EXISTING_PR=$(gh pr list --base develop --head main --json number --jq '.[0].number // empty')
 
           if [ -z "$EXISTING_PR" ]; then
             gh pr create \
