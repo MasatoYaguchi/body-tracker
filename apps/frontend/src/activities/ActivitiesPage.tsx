@@ -134,7 +134,7 @@ export function ActivitiesPage(): React.ReactElement {
         exerciseType: exerciseTypes.find((t) => t.id === e.exerciseTypeId),
       })),
     };
-    setActivities([newActivity, ...activities]);
+    setActivities((prev) => [newActivity, ...prev]);
   };
 
   // 活動記録の更新
@@ -149,13 +149,13 @@ export function ActivitiesPage(): React.ReactElement {
         exerciseType: exerciseTypes.find((t) => t.id === e.exerciseTypeId),
       })),
     };
-    setActivities(activities.map((a) => (a.id === editingActivity.id ? updated : a)));
+    setActivities((prev) => prev.map((a) => (a.id === editingActivity.id ? updated : a)));
     setEditingActivity(null);
   };
 
   // 活動記録の削除
   const handleDeleteActivity = (id: string) => {
-    setActivities(activities.filter((a) => a.id !== id));
+    setActivities((prev) => prev.filter((a) => a.id !== id));
     setEditingActivity(null);
   };
 
@@ -166,17 +166,17 @@ export function ActivitiesPage(): React.ReactElement {
       name,
       sortOrder: exerciseTypes.length + 1,
     };
-    setExerciseTypes([...exerciseTypes, newType]);
+    setExerciseTypes((prev) => [...prev, newType]);
   };
 
   // 運動種目の更新
   const handleUpdateExerciseType = (id: string, name: string) => {
-    setExerciseTypes(exerciseTypes.map((t) => (t.id === id ? { ...t, name } : t)));
+    setExerciseTypes((prev) => prev.map((t) => (t.id === id ? { ...t, name } : t)));
   };
 
   // 運動種目の削除
   const handleDeleteExerciseType = (id: string) => {
-    setExerciseTypes(exerciseTypes.filter((t) => t.id !== id));
+    setExerciseTypes((prev) => prev.filter((t) => t.id !== id));
   };
 
   return (
@@ -228,7 +228,10 @@ export function ActivitiesPage(): React.ReactElement {
       {/* 編集モーダル */}
       <Modal
         isOpen={!!editingActivity}
-        onClose={() => setEditingActivity(null)}
+        onClose={() => {
+          setEditingActivity(null);
+          setShowDeleteConfirm(false);
+        }}
         title="記録を編集"
         footer={
           <>
@@ -241,7 +244,10 @@ export function ActivitiesPage(): React.ReactElement {
             </button>
             <button
               type="button"
-              onClick={() => setEditingActivity(null)}
+              onClick={() => {
+                setEditingActivity(null);
+                setShowDeleteConfirm(false);
+              }}
               className="px-4 py-2 border border-border text-content-secondary rounded-lg hover:bg-surface-secondary transition-colors"
             >
               キャンセル
