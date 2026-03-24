@@ -217,6 +217,10 @@ app.delete('/api/records/:id', authMiddleware, async (c) => {
     const userPayload = getAuthenticatedUser(c);
     const id = c.req.param('id');
 
+    if (!id) {
+      return c.json({ error: 'IDが指定されていません' }, 400);
+    }
+
     console.log('🗑️ 記録削除リクエスト - ユーザー:', userPayload.email, 'レコードID:', id);
 
     // ユーザーの記録のみ削除可能（論理削除）
