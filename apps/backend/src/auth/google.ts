@@ -244,7 +244,7 @@ export async function generateJWT(user: AuthUser, jwtSecret: string): Promise<st
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // 30日間有効
   };
 
-  const token = await sign(payload, jwtSecret);
+  const token = await sign(payload, jwtSecret, 'HS256');
 
   console.log('✅ JWT生成完了');
   return token;
@@ -261,7 +261,7 @@ export async function verifyJWT(token: string, jwtSecret: string): Promise<JWTPa
   try {
     console.log('🔍 JWT検証中...');
 
-    const decoded = (await verify(token, jwtSecret)) as unknown as JWTPayload;
+    const decoded = (await verify(token, jwtSecret, 'HS256')) as unknown as JWTPayload;
 
     console.log('✅ JWT検証成功:', decoded.email);
     return decoded;
