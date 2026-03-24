@@ -7,12 +7,49 @@ const meta: Meta<typeof Modal> = {
   component: Modal,
   parameters: {
     layout: 'centered',
+    docs: {
+      description: {
+        component: `
+汎用モーダルコンポーネント。
+
+## 特徴
+- ESCキーで閉じる
+- 背景クリックで閉じる
+- スクロールロック対応
+- タイトル・フッターはオプション
+
+## 使い方
+\`\`\`tsx
+<Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="タイトル">
+  <p>モーダルの内容</p>
+</Modal>
+\`\`\`
+
+**注意**: Docsのプレビューではボタンをクリックしてモーダルを開いてください。
+        `,
+      },
+    },
   },
   tags: ['autodocs'],
 };
 
 export default meta;
 type Story = StoryObj<typeof Modal>;
+
+// 初期状態で開いているモーダル（ビジュアルテスト・Chromatic用）
+// Docsページでは表示しない（閉じられないため）
+export const Opened: Story = {
+  parameters: {
+    docs: { disable: true },
+  },
+  render: () => (
+    <Modal isOpen={true} onClose={() => {}} title="開いた状態のモーダル">
+      <p className="text-gray-600">
+        このStoryは初期状態でモーダルが開いています。ビジュアルテストやChromatic用です。
+      </p>
+    </Modal>
+  ),
+};
 
 // Modalは isOpen が必要なため、ラッパーコンポーネントを使用
 function ModalDemo({
