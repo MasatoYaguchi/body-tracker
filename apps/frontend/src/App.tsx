@@ -1,6 +1,7 @@
 import type React from 'react';
 import { Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { ActivitiesPage } from './activities';
 import { AuthProvider, useAuth } from './auth';
 import { AuthCallback } from './auth/components/AuthCallback';
 import { Dashboard } from './dashboard/Dashboard';
@@ -82,6 +83,16 @@ export default function App(): React.ReactElement {
 
               {/* ランキング (公開) */}
               <Route path="/ranking" element={<RankingPage />} />
+
+              {/* 活動記録 (認証必須) */}
+              <Route
+                path="/activities"
+                element={
+                  <ProtectedRoute>
+                    <ActivitiesPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
 
             {/* 未定義パスはルートへ */}

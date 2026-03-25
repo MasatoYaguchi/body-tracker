@@ -1,20 +1,59 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'media', // システム設定に追従
   theme: {
     extend: {
       colors: {
+        // プライマリカラー（CSS変数参照）
         primary: {
-          50: '#f0f4ff',
-          100: '#e0e7ff',
-          500: '#667eea',
-          600: '#5a6fd8',
-          700: '#4c63d2',
-          900: '#3730a3',
+          50: 'var(--color-primary-50)',
+          100: 'var(--color-primary-100)',
+          200: 'var(--color-primary-200)',
+          300: 'var(--color-primary-300)',
+          400: 'var(--color-primary-400)',
+          500: 'var(--color-primary-500)',
+          600: 'var(--color-primary-600)',
+          700: 'var(--color-primary-700)',
+          800: 'var(--color-primary-800)',
+          900: 'var(--color-primary-900)',
         },
+        // セカンダリカラー
         secondary: {
-          500: '#764ba2',
-          600: '#6b46c1',
+          500: 'var(--color-secondary-500)',
+          600: 'var(--color-secondary-600)',
+        },
+        // セマンティックカラー（背景・テキスト・ボーダー）
+        surface: {
+          DEFAULT: 'var(--color-surface)',
+          secondary: 'var(--color-surface-secondary)',
+          elevated: 'var(--color-surface-elevated)',
+        },
+        content: {
+          DEFAULT: 'var(--color-content)',
+          secondary: 'var(--color-content-secondary)',
+          muted: 'var(--color-content-muted)',
+        },
+        border: {
+          DEFAULT: 'var(--color-border)',
+          secondary: 'var(--color-border-secondary)',
+        },
+        // ステータスカラー
+        success: {
+          DEFAULT: 'var(--color-success)',
+          light: 'var(--color-success-light)',
+        },
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          light: 'var(--color-warning-light)',
+        },
+        danger: {
+          DEFAULT: 'var(--color-danger)',
+          light: 'var(--color-danger-light)',
+        },
+        info: {
+          DEFAULT: 'var(--color-info)',
+          light: 'var(--color-info-light)',
         },
       },
       fontFamily: {

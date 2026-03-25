@@ -2,28 +2,140 @@
 @tailwind components;
 @tailwind utilities;
 
-/* カスタムCSS変数（必要に応じて） */
-:root {
-  --brand-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* ========================================
+   カラートークン定義
+   ======================================== */
+@layer base {
+  :root {
+    /* ブランドカラー */
+    --color-primary-50: #f0f4ff;
+    --color-primary-100: #e0e7ff;
+    --color-primary-200: #c7d2fe;
+    --color-primary-300: #a5b4fc;
+    --color-primary-400: #818cf8;
+    --color-primary-500: #667eea;
+    --color-primary-600: #5a6fd8;
+    --color-primary-700: #4c63d2;
+    --color-primary-800: #3730a3;
+    --color-primary-900: #312e81;
+
+    /* セカンダリカラー */
+    --color-secondary-500: #764ba2;
+    --color-secondary-600: #6b46c1;
+
+    /* サーフェス（背景）カラー */
+    --color-surface: #ffffff;
+    --color-surface-secondary: #f9fafb;
+    --color-surface-elevated: #ffffff;
+
+    /* コンテンツ（テキスト）カラー */
+    --color-content: #111827;
+    --color-content-secondary: #4b5563;
+    --color-content-muted: #9ca3af;
+
+    /* ボーダーカラー */
+    --color-border: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+
+    /* ステータスカラー */
+    --color-success: #10b981;
+    --color-success-light: #d1fae5;
+    --color-warning: #f59e0b;
+    --color-warning-light: #fef3c7;
+    --color-danger: #ef4444;
+    --color-danger-light: #fee2e2;
+    --color-info: #3b82f6;
+    --color-info-light: #dbeafe;
+
+    /* ブランドグラデーション */
+    --brand-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  /* ダークモード */
+  .dark {
+    --color-primary-50: #1e1b4b;
+    --color-primary-100: #312e81;
+    --color-primary-200: #3730a3;
+    --color-primary-300: #4338ca;
+    --color-primary-400: #4f46e5;
+    --color-primary-500: #667eea;
+    --color-primary-600: #818cf8;
+    --color-primary-700: #a5b4fc;
+    --color-primary-800: #c7d2fe;
+    --color-primary-900: #e0e7ff;
+
+    --color-surface: #111827;
+    --color-surface-secondary: #1f2937;
+    --color-surface-elevated: #374151;
+
+    --color-content: #f3f4f6;
+    --color-content-secondary: #9ca3af;
+    --color-content-muted: #6b7280;
+
+    --color-border: #374151;
+    --color-border-secondary: #4b5563;
+
+    --color-success-light: #064e3b;
+    --color-warning-light: #78350f;
+    --color-danger-light: #7f1d1d;
+    --color-info-light: #1e3a8a;
+  }
 }
 
-/* カスタムコンポーネント（必要に応じて） */
+/* ========================================
+   カスタムコンポーネント
+   ======================================== */
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 bg-primary-500 text-white rounded-lg font-medium 
-           hover:bg-primary-600 focus:outline-none focus:ring-2 
-           focus:ring-primary-500 focus:ring-offset-2 
+    @apply px-6 py-3 bg-primary-500 text-white rounded-lg font-medium
+           hover:bg-primary-600 focus:outline-none focus:ring-2
+           focus:ring-primary-500 focus:ring-offset-2
            transition-all duration-200 transform hover:-translate-y-0.5;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-card border border-gray-100 
+    @apply bg-surface rounded-xl shadow-card border border-border
            hover:shadow-card-hover transition-shadow duration-300;
   }
 
   .form-input {
-    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-lg 
-           focus:border-primary-500 focus:ring-2 focus:ring-primary-100 
+    @apply w-full px-4 py-3 border-2 border-border rounded-lg
+           bg-surface text-content
+           focus:border-primary-500 focus:ring-2 focus:ring-primary-100
            focus:outline-none transition-colors duration-200;
+  }
+
+  /* セクションカード（Activities等で使用） */
+  .section-card {
+    @apply p-4 bg-surface-secondary rounded-lg;
+  }
+
+  /* タグ/バッジ */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300;
+  }
+
+  .badge-warning {
+    @apply bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300;
+  }
+
+  .badge-info {
+    @apply bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300;
   }
 }
