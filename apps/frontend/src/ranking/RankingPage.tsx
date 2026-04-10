@@ -2,7 +2,7 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import { authApi } from '../auth/services/authApi';
 import { useAuth } from '../auth/useAuth';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { LoadingSpinner } from '../shared/ui';
 import { RankingTable } from './RankingTable';
 import type { RankingData } from './types';
 

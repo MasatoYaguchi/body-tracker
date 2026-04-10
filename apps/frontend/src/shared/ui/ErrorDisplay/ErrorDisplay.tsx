@@ -1,6 +1,3 @@
-// apps/frontend/src/components/ui/ErrorDisplay.tsx
-// 再利用可能なエラー表示コンポーネント
-
 /**
  * ErrorDisplayコンポーネントのProps
  */
@@ -23,26 +20,6 @@ export interface ErrorDisplayProps {
 
 /**
  * 再利用可能なエラー表示コンポーネント
- *
- * @param props - ErrorDisplayProps
- * @returns React.ReactElement
- *
- * @example
- * ```typescript
- * // 基本的なエラー表示
- * <ErrorDisplay
- *   title="データ読み込みエラー"
- *   message="データの取得に失敗しました"
- *   showRetry
- *   onRetry={() => refetch()}
- * />
- *
- * // 警告表示
- * <ErrorDisplay
- *   variant="warning"
- *   message="一部の機能が利用できません"
- * />
- * ```
  */
 export function ErrorDisplay({
   title = 'エラーが発生しました',
@@ -89,7 +66,7 @@ export function ErrorDisplay({
       case 'warning':
         return (
           <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <title>体重・体脂肪率管理アプリWarningアイコン</title>
+            <title>警告アイコン</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -101,7 +78,7 @@ export function ErrorDisplay({
       case 'info':
         return (
           <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <title>体重・体脂肪率管理アプリアイコン</title>
+            <title>情報アイコン</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -113,7 +90,7 @@ export function ErrorDisplay({
       default: // error
         return (
           <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <title>体重・体脂肪率管理アプリアイコン</title>
+            <title>エラーアイコン</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -155,7 +132,7 @@ export function ErrorDisplay({
             `}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <title>体重・体脂肪率管理アプリ再試行アイコン</title>
+              <title>再試行アイコン</title>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -193,7 +170,7 @@ export function InlineError({
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <title>体重・体脂肪率管理アプリアイコン</title>
+            <title>エラーアイコン</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -214,7 +191,7 @@ export function InlineError({
             >
               <span className="sr-only">閉じる</span>
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <title>体重・体脂肪率管理アプリアイコン</title>
+                <title>閉じるアイコン</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

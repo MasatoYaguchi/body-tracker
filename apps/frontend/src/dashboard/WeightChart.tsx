@@ -11,7 +11,7 @@ import {
 } from 'chart.js';
 import { useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
-import { useWindowSize } from '../hooks/useWindowSize';
+import { useWindowSize } from '../shared/lib/hooks';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 

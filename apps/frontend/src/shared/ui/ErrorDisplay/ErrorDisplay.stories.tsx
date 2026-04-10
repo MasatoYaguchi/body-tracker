@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ErrorDisplay, InlineError } from './ErrorDisplay';
 
 const meta: Meta<typeof ErrorDisplay> = {
-  title: 'UI/ErrorDisplay',
+  title: 'shared/ui/ErrorDisplay',
   component: ErrorDisplay,
   parameters: {
     layout: 'centered',

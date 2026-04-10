@@ -3,9 +3,7 @@
 
 import type { BodyRecord, Stats } from '@body-tracker/shared';
 import { useCallback, useEffect, useState } from 'react';
-import { ErrorDisplay } from '../ui/ErrorDisplay';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { Modal } from '../ui/Modal';
+import { ErrorDisplay, LoadingSpinner, Modal } from '../shared/ui';
 
 import { DashboardHeader } from './DashboardHeader';
 import { QuickRecordForm } from './QuickRecordForm';

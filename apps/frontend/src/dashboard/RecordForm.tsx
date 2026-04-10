@@ -1,6 +1,6 @@
 import { BODY_FAT_MAX, BODY_FAT_MIN, WEIGHT_MAX, WEIGHT_MIN } from '@body-tracker/shared';
 import { memo, useEffect, useState } from 'react';
-import { InlineSpinner } from '../ui/LoadingSpinner';
+import { InlineSpinner } from '../shared/ui';
 
 export interface RecordFormData {
   weight: number;

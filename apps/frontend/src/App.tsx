@@ -7,7 +7,7 @@ import { Dashboard } from './dashboard/Dashboard';
 import { LoginScreen } from './layout/LoginScreen';
 import { MainLayout } from './layout/MainLayout';
 import { RankingPage } from './ranking/RankingPage';
-import { LoadingSpinner } from './ui/LoadingSpinner';
+import { LoadingSpinner } from './shared/ui';
 
 /**
  * 認証ガードコンポーネント
