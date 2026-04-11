@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { InlineSpinner, LoadingSpinner } from './LoadingSpinner';
 
 const meta: Meta<typeof LoadingSpinner> = {
-  title: 'UI/LoadingSpinner',
+  title: 'shared/ui/LoadingSpinner',
   component: LoadingSpinner,
   parameters: {
     layout: 'centered',

@@ -4,7 +4,7 @@
 import { useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
-import { InlineSpinner } from '../ui/LoadingSpinner';
+import { InlineSpinner } from '../shared/ui';
 
 /**
  * UserHeaderコンポーネントのProps

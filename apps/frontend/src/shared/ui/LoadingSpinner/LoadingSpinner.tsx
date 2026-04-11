@@ -1,6 +1,3 @@
-// apps/frontend/src/components/ui/LoadingSpinner.tsx
-// 再利用可能なローディングスピナーコンポーネント
-
 /**
  * LoadingSpinnerコンポーネントのProps
  */
@@ -17,21 +14,6 @@ export interface LoadingSpinnerProps {
 
 /**
  * 再利用可能なローディングスピナーコンポーネント
- *
- * @param props - LoadingSpinnerProps
- * @returns React.ReactElement
- *
- * @example
- * ```typescript
- * // 基本的な使用
- * <LoadingSpinner message="読み込み中..." />
- *
- * // 全画面ローディング
- * <LoadingSpinner size="large" message="認証状態を確認中..." fullScreen />
- *
- * // 小さなインライン表示
- * <LoadingSpinner size="small" />
- * ```
  */
 export function LoadingSpinner({
   size = 'medium',
@@ -59,7 +41,6 @@ export function LoadingSpinner({
   return (
     <div className={`${containerClass} ${className}`}>
       <div className="text-center">
-        {/* The elements with the following roles can be changed to the following elements:<output> */}
         {/* biome-ignore lint/a11y/useSemanticElements: Keeping div for styling consistency */}
         <div
           role="status"

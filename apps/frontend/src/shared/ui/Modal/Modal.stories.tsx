@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal } from './Modal';
 
 const meta: Meta<typeof Modal> = {
-  title: 'UI/Modal',
+  title: 'shared/ui/Modal',
   component: Modal,
   parameters: {
     layout: 'centered',
