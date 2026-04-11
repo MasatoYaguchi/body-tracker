@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { InlineSpinner } from '../../ui/LoadingSpinner';
+import { InlineSpinner } from '../../shared/ui';
 import { updateProfile } from '../services/authApi';
 import { useAuth } from '../useAuth';
 
