@@ -43,7 +43,7 @@ apps/frontend/src/
 ├── features/          # ユーザーアクション・ビジネスロジック
 │   ├── auth/          # ログイン/ログアウト
 │   ├── record-entry/  # 体重記録入力
-│   ├── activity-entry/# 活動記録入力
+│   ├── activity-entry/  # 活動記録入力
 │   └── ranking-view/  # ランキング表示
 │
 ├── entities/          # ビジネスエンティティ（データモデル）
