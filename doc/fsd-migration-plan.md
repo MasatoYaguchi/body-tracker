@@ -127,7 +127,7 @@ app → pages → widgets → features → entities → shared
 
 ### Phase 5: pages/app層の再構成
 
-1. ページコンポーネントをwiggets/features/entitiesの組み合わせに
+1. ページコンポーネントをwidgets/features/entitiesの組み合わせに
 2. ルーティング設定の整理
 
 ## ファイル構造の例
